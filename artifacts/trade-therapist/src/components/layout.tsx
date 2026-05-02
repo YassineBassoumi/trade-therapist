@@ -2,7 +2,22 @@ import React from "react";
 import { Sidebar } from "./sidebar";
 import { BottomNav } from "./bottom-nav";
 
-export function Layout({ children }: { children: React.ReactNode }) {
+interface LayoutProps {
+  children: React.ReactNode;
+  noSidebar?: boolean;
+}
+
+export function Layout({ children, noSidebar = false }: LayoutProps) {
+  if (noSidebar) {
+    return (
+      <div className="min-h-screen w-full bg-background text-foreground selection:bg-primary/30">
+        <main className="w-full">
+          {children}
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen w-full bg-background text-foreground selection:bg-primary/30">
       <Sidebar />
