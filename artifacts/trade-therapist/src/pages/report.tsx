@@ -5,7 +5,7 @@ import { useGenerateWeeklyReport } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText, Loader2, Sparkles, Calendar } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import { format } from "date-fns";
@@ -18,10 +18,11 @@ export default function Report() {
 
   const generateReport = useGenerateWeeklyReport();
 
-  if (!authLoading && !isAuthenticated) {
-    setLocation("/");
-    return null;
-  }
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      setLocation("/");
+    }
+  }, [authLoading, isAuthenticated, setLocation]);
 
   const handleGenerate = () => {
     generateReport.mutate(undefined, {

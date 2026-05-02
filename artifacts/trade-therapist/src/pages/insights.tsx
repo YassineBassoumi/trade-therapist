@@ -7,6 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { emotionColors } from "@/components/emotion-chip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Activity, Percent, DollarSign, Brain } from "lucide-react";
+import { useEffect } from "react";
 
 export default function Insights() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -19,10 +20,11 @@ export default function Insights() {
     }
   });
 
-  if (!authLoading && !isAuthenticated) {
-    setLocation("/");
-    return null;
-  }
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      setLocation("/");
+    }
+  }, [authLoading, isAuthenticated, setLocation]);
 
   if (authLoading || insightsLoading) {
     return (

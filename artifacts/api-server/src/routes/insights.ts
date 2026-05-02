@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, tradesTable, journalsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -30,7 +30,7 @@ router.get("/insights", async (req, res) => {
           .where(
             tradeIds.length === 1
               ? eq(journalsTable.tradeId, tradeIds[0])
-              : journalsTable.tradeId.in(tradeIds),
+              : inArray(journalsTable.tradeId, tradeIds),
           )
       : [];
 
