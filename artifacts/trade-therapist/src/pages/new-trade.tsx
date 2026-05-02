@@ -10,32 +10,102 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Mic, Square, Loader2, ArrowLeft, Save } from "lucide-react";
+import { Mic, Square, Loader2, ArrowLeft, Save, ChevronDown } from "lucide-react";
 import { EmotionChip } from "@/components/emotion-chip";
 import { toast } from "sonner";
-import { format } from "date-fns";
+
+type MarketType = "equity" | "forex" | "crypto";
+
+const FOREX_PAIRS = [
+  "EUR/USD", "GBP/USD", "USD/JPY", "USD/CHF", "AUD/USD", "USD/CAD", "NZD/USD",
+  "EUR/GBP", "EUR/JPY", "GBP/JPY", "EUR/AUD", "EUR/CAD", "AUD/JPY", "GBP/AUD",
+  "USD/MXN", "USD/ZAR", "EUR/CHF", "GBP/CHF",
+];
+
+const CRYPTO_EXAMPLES = ["BTC/USD", "ETH/USD", "SOL/USD", "XRP/USD", "BNB/USD"];
+
+const MARKET_LABELS: Record<MarketType, { label: string; sizePlaceholder: string; sizeLabel: string; pricePlaceholder: string; tickerPlaceholder: string }> = {
+  equity: {
+    label: "Stocks / ETFs",
+    sizePlaceholder: "Shares",
+    sizeLabel: "Shares",
+    pricePlaceholder: "0.00",
+    tickerPlaceholder: "AAPL, TSLA, SPY…",
+  },
+  forex: {
+    label: "Forex",
+    sizePlaceholder: "Lot size (e.g. 0.1)",
+    sizeLabel: "Lot Size",
+    pricePlaceholder: "1.0842",
+    tickerPlaceholder: "EUR/USD, GBP/JPY…",
+  },
+  crypto: {
+    label: "Crypto",
+    sizePlaceholder: "Quantity",
+    sizeLabel: "Quantity",
+    pricePlaceholder: "0.00",
+    tickerPlaceholder: "BTC/USD, ETH/USD…",
+  },
+};
+
+function ForexPairGrid({ onSelect }: { onSelect: (pair: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-1.5 mt-2">
+      {FOREX_PAIRS.map((pair) => (
+        <button
+          key={pair}
+          type="button"
+          onClick={() => onSelect(pair)}
+          className="px-2.5 py-1 rounded-md text-xs font-mono font-medium bg-secondary border border-border text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors"
+        >
+          {pair}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function CryptoPairGrid({ onSelect }: { onSelect: (pair: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-1.5 mt-2">
+      {CRYPTO_EXAMPLES.map((pair) => (
+        <button
+          key={pair}
+          type="button"
+          onClick={() => onSelect(pair)}
+          className="px-2.5 py-1 rounded-md text-xs font-mono font-medium bg-secondary border border-border text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors"
+        >
+          {pair}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export default function NewTrade() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
 
+  const [marketType, setMarketType] = useState<MarketType>("equity");
   const [ticker, setTicker] = useState("");
   const [side, setSide] = useState<"long" | "short">("long");
   const [entryPrice, setEntryPrice] = useState("");
   const [exitPrice, setExitPrice] = useState("");
   const [size, setSize] = useState("");
   const [pnl, setPnl] = useState("");
-  
+
   const [transcript, setTranscript] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(true);
-  
+
   const recognitionRef = useRef<any>(null);
   const finalTranscriptRef = useRef("");
 
   const createTrade = useCreateTrade();
   const [analysisResult, setAnalysisResult] = useState<any>(null);
+
+  const meta = MARKET_LABELS[marketType];
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -69,7 +139,6 @@ export default function NewTrade() {
     };
 
     recognition.onerror = (event: any) => {
-      console.error("Speech recognition error", event.error);
       if (event.error === "not-allowed") {
         toast.error("Microphone access denied. Please type your reflection instead.");
         setIsRecording(false);
@@ -91,7 +160,6 @@ export default function NewTrade() {
 
   const toggleRecording = () => {
     if (!recognitionRef.current) return;
-
     if (isRecording) {
       recognitionRef.current.stop();
       setIsRecording(false);
@@ -101,10 +169,14 @@ export default function NewTrade() {
         recognitionRef.current.start();
         setIsRecording(true);
       } catch (e) {
-        console.error(e);
         toast.error("Failed to start recording");
       }
     }
+  };
+
+  const handleMarketChange = (type: MarketType) => {
+    setMarketType(type);
+    setTicker("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -144,11 +216,22 @@ export default function NewTrade() {
           setAnalysisResult(data.journal);
           toast.success("Trade journaled successfully");
         },
-        onError: (err) => {
+        onError: () => {
           toast.error("Failed to save trade");
-        }
+        },
       }
     );
+  };
+
+  const resetForm = () => {
+    setAnalysisResult(null);
+    setTicker("");
+    setEntryPrice("");
+    setExitPrice("");
+    setSize("");
+    setPnl("");
+    setTranscript("");
+    finalTranscriptRef.current = "";
   };
 
   if (authLoading) return null;
@@ -177,12 +260,16 @@ export default function NewTrade() {
                   </div>
                   <div className="mt-6 flex items-center justify-between w-full max-w-xs px-4">
                     <div className="text-center">
-                      <div className="text-2xl font-mono font-bold text-foreground">{analysisResult.emotionScore}/10</div>
+                      <div className="text-2xl font-mono font-bold text-foreground">
+                        {Math.round(analysisResult.emotionScore * 10)}/10
+                      </div>
                       <div className="text-xs text-muted-foreground">Intensity</div>
                     </div>
                     <div className="w-px h-8 bg-border"></div>
                     <div className="text-center">
-                      <div className="text-2xl font-mono font-bold text-foreground">{analysisResult.planFollowingScore}/10</div>
+                      <div className="text-2xl font-mono font-bold text-foreground">
+                        {Math.round(analysisResult.planFollowingScore * 10)}/10
+                      </div>
                       <div className="text-xs text-muted-foreground">Plan Score</div>
                     </div>
                   </div>
@@ -210,16 +297,7 @@ export default function NewTrade() {
               </CardContent>
               <CardFooter className="bg-muted/30 border-t border-border p-6 flex justify-between">
                 <Button variant="outline" onClick={() => setLocation("/dashboard")}>View Journal</Button>
-                <Button onClick={() => {
-                  setAnalysisResult(null);
-                  setTicker("");
-                  setEntryPrice("");
-                  setExitPrice("");
-                  setSize("");
-                  setPnl("");
-                  setTranscript("");
-                  finalTranscriptRef.current = "";
-                }}>Log Another Trade</Button>
+                <Button onClick={resetForm}>Log Another Trade</Button>
               </CardFooter>
             </Card>
           </div>
@@ -230,48 +308,135 @@ export default function NewTrade() {
               <p className="text-muted-foreground">Enter the details and speak your mind. Be honest about why you took this trade.</p>
             </div>
 
+            {/* Market Type Selector */}
+            <div className="flex gap-2 p-1 bg-secondary/50 border border-border rounded-lg">
+              {(["equity", "forex", "crypto"] as MarketType[]).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => handleMarketChange(type)}
+                  className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
+                    marketType === type
+                      ? "bg-card border border-border text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {MARKET_LABELS[type].label}
+                </button>
+              ))}
+            </div>
+
             <Card className="border-border">
               <CardHeader>
                 <CardTitle className="text-lg">Trade Details</CardTitle>
+                {marketType === "forex" && (
+                  <CardDescription>
+                    Forex: size in lots (standard = 1.0, mini = 0.1, micro = 0.01). Entry/exit prices in quote currency rate.
+                  </CardDescription>
+                )}
+                {marketType === "crypto" && (
+                  <CardDescription>
+                    Crypto: size in coin quantity. Use pairs like BTC/USD, ETH/USD.
+                  </CardDescription>
+                )}
               </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <CardContent className="space-y-6">
+                {/* Ticker */}
                 <div className="space-y-2">
-                  <Label htmlFor="ticker">Ticker</Label>
-                  <Input id="ticker" placeholder="e.g. AAPL, BTC, ES" value={ticker} onChange={e => setTicker(e.target.value)} required className="font-mono uppercase" />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Direction</Label>
-                  <RadioGroup value={side} onValueChange={(v: "long"|"short") => setSide(v)} className="flex gap-4 pt-1">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="long" id="long" />
-                      <Label htmlFor="long" className="font-mono text-primary">LONG</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="short" id="short" />
-                      <Label htmlFor="short" className="font-mono text-destructive">SHORT</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="size">Position Size</Label>
-                  <Input id="size" type="number" step="any" placeholder="Shares/Contracts" value={size} onChange={e => setSize(e.target.value)} required />
+                  <Label htmlFor="ticker">Instrument</Label>
+                  <Input
+                    id="ticker"
+                    placeholder={meta.tickerPlaceholder}
+                    value={ticker}
+                    onChange={e => setTicker(e.target.value)}
+                    required
+                    className="font-mono uppercase"
+                  />
+                  {marketType === "forex" && (
+                    <ForexPairGrid onSelect={(pair) => setTicker(pair)} />
+                  )}
+                  {marketType === "crypto" && (
+                    <CryptoPairGrid onSelect={(pair) => setTicker(pair)} />
+                  )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="entry">Entry Price</Label>
-                  <Input id="entry" type="number" step="any" placeholder="0.00" value={entryPrice} onChange={e => setEntryPrice(e.target.value)} required />
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Direction */}
+                  <div className="space-y-2">
+                    <Label>Direction</Label>
+                    <RadioGroup value={side} onValueChange={(v: "long" | "short") => setSide(v)} className="flex gap-4 pt-1">
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="long" id="long" />
+                        <Label htmlFor="long" className="font-mono text-primary cursor-pointer">
+                          {marketType === "forex" ? "BUY / LONG" : "LONG"}
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="short" id="short" />
+                        <Label htmlFor="short" className="font-mono text-destructive cursor-pointer">
+                          {marketType === "forex" ? "SELL / SHORT" : "SHORT"}
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="exit">Exit Price <span className="text-muted-foreground font-normal">(Optional)</span></Label>
-                  <Input id="exit" type="number" step="any" placeholder="0.00" value={exitPrice} onChange={e => setExitPrice(e.target.value)} />
-                </div>
+                  {/* Size */}
+                  <div className="space-y-2">
+                    <Label htmlFor="size">{meta.sizeLabel}</Label>
+                    <Input
+                      id="size"
+                      type="number"
+                      step="any"
+                      placeholder={meta.sizePlaceholder}
+                      value={size}
+                      onChange={e => setSize(e.target.value)}
+                      required
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="pnl">Realized P&L <span className="text-muted-foreground font-normal">(Optional)</span></Label>
-                  <Input id="pnl" type="number" step="any" placeholder="± 0.00" value={pnl} onChange={e => setPnl(e.target.value)} />
+                  {/* Entry Price */}
+                  <div className="space-y-2">
+                    <Label htmlFor="entry">Entry Price</Label>
+                    <Input
+                      id="entry"
+                      type="number"
+                      step="any"
+                      placeholder={meta.pricePlaceholder}
+                      value={entryPrice}
+                      onChange={e => setEntryPrice(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  {/* Exit Price */}
+                  <div className="space-y-2">
+                    <Label htmlFor="exit">
+                      Exit Price <span className="text-muted-foreground font-normal">(Optional)</span>
+                    </Label>
+                    <Input
+                      id="exit"
+                      type="number"
+                      step="any"
+                      placeholder={meta.pricePlaceholder}
+                      value={exitPrice}
+                      onChange={e => setExitPrice(e.target.value)}
+                    />
+                  </div>
+
+                  {/* P&L */}
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="pnl">
+                      Realized P&L <span className="text-muted-foreground font-normal">(Optional — in your account currency)</span>
+                    </Label>
+                    <Input
+                      id="pnl"
+                      type="number"
+                      step="any"
+                      placeholder="± 0.00"
+                      value={pnl}
+                      onChange={e => setPnl(e.target.value)}
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -290,8 +455,8 @@ export default function NewTrade() {
                       type="button"
                       onClick={toggleRecording}
                       className={`relative flex items-center justify-center w-20 h-20 rounded-full transition-all duration-300 shadow-lg ${
-                        isRecording 
-                          ? "bg-destructive text-destructive-foreground hover:bg-destructive/90 scale-105" 
+                        isRecording
+                          ? "bg-destructive text-destructive-foreground hover:bg-destructive/90 scale-105"
                           : "bg-primary text-primary-foreground hover:bg-primary/90"
                       }`}
                     >
@@ -316,9 +481,9 @@ export default function NewTrade() {
 
                 <div className="space-y-2">
                   <Label htmlFor="transcript" className="sr-only">Transcript</Label>
-                  <Textarea 
-                    id="transcript" 
-                    placeholder="Type your reflection here..." 
+                  <Textarea
+                    id="transcript"
+                    placeholder="Type your reflection here..."
                     className="min-h-[150px] text-base leading-relaxed resize-y focus-visible:ring-primary"
                     value={transcript}
                     onChange={(e) => {
