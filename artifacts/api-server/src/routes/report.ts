@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, tradesTable, journalsTable } from "@workspace/db";
-import { eq, gte } from "drizzle-orm";
+import { eq, gte, inArray } from "drizzle-orm";
 import { generateWeeklyReportWithGroq } from "../lib/groq";
 
 const router: IRouter = Router();
@@ -42,7 +42,7 @@ router.post("/report/weekly", async (req, res) => {
           .where(
             tradeIds.length === 1
               ? eq(journalsTable.tradeId, tradeIds[0])
-              : journalsTable.tradeId.in(tradeIds),
+              : inArray(journalsTable.tradeId, tradeIds),
           )
       : [];
 
