@@ -93,12 +93,17 @@ router.post("/trades", async (req, res) => {
     if (pnl === null && body.exitPrice != null) {
       const directionMultiplier = body.side === "long" ? 1 : -1;
       const priceDiff = body.exitPrice - body.entryPrice;
-      const isForex = /^[A-Z]{3}\/?[A-Z]{3}$/i.test(body.ticker.replace("/", ""));
+      const ticker = body.ticker.replace("/", "").toUpperCase();
+      const isForex = /^[A-Z]{6}$/.test(ticker);
+      const isJPYPair = isForex && ticker.endsWith("JPY");
       if (isForex) {
-        // Forex: size is lot size, 1 standard lot = 100,000 units
-        // For USD-quoted pairs (EUR/USD, GBP/USD, etc.) this gives exact USD P&L
-        // For USD-base pairs (USD/JPY etc.) this is a close approximation
-        pnl = directionMultiplier * priceDiff * body.size * 100000;
+        // JPY-quoted pairs (GBP/JPY, USD/JPY, EUR/JPY):
+        //   price is in JPY (e.g. 192.45), 1 pip = 0.01
+        //   pip value ≈ $10 per lot → use ×1,000 for USD approximation
+        // All other Forex pairs: price quoted in USD (EUR/USD etc.)
+        //   1 pip = 0.0001, pip value = $10 per lot → use ×100,000
+        const lotMultiplier = isJPYPair ? 1000 : 100000;
+        pnl = directionMultiplier * priceDiff * body.size * lotMultiplier;
       } else {
         // Equity / crypto: size is shares or coins
         pnl = directionMultiplier * priceDiff * body.size;
