@@ -237,10 +237,14 @@ export default function Dashboard() {
                         </span>
                       </div>
                     </div>
-                    {trade.pnl !== undefined && trade.pnl !== null && (
-                      <div className={`text-2xl font-bold mb-1 flex items-center ${trade.pnl >= 0 ? "text-primary" : "text-destructive"}`}>
-                        {trade.pnl >= 0 ? <ArrowUpRight className="mr-1 h-5 w-5" /> : <ArrowDownRight className="mr-1 h-5 w-5" />}
-                        ${Math.abs(trade.pnl).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {trade.closedAt ? (
+                      <div className={`text-2xl font-bold mb-1 flex items-center ${(trade.pnl ?? 0) >= 0 ? "text-primary" : "text-destructive"}`}>
+                        {(trade.pnl ?? 0) >= 0 ? <ArrowUpRight className="mr-1 h-5 w-5" /> : <ArrowDownRight className="mr-1 h-5 w-5" />}
+                        ${Math.abs(trade.pnl ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    ) : (
+                      <div className="text-xs font-semibold px-2 py-1 rounded bg-muted text-muted-foreground inline-flex w-fit mb-1">
+                        OPEN
                       </div>
                     )}
                     <div className="text-xs text-muted-foreground mt-auto pt-4">
