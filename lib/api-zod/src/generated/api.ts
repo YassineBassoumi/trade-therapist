@@ -199,3 +199,21 @@ export const GenerateWeeklyReportResponse = zod.object({
   markdown: zod.string(),
   generatedAt: zod.coerce.date(),
 });
+
+/**
+ * @summary Get current and all-time best streaks
+ */
+export const GetStreaksResponse = zod.object({
+  calmWinStreak: zod.object({
+    current: zod.number(),
+    best: zod.number(),
+  }),
+  disciplineStreak: zod.object({
+    current: zod.number(),
+    best: zod.number(),
+  }),
+  fomoFreeDays: zod.object({
+    current: zod.number(),
+    best: zod.number(),
+  }),
+});

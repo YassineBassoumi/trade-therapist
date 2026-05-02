@@ -5,6 +5,7 @@ import tradesRouter from "./trades";
 import insightsRouter from "./insights";
 import reportRouter from "./report";
 import seedRouter from "./seed";
+import streaksRouter from "./streaks";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(tradesRouter);
 router.use(insightsRouter);
 router.use(reportRouter);
 router.use(seedRouter);
+router.use(streaksRouter);
 
 export default router;

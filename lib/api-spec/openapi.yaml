@@ -227,6 +227,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/WeeklyReport"
 
+  /streaks:
+    get:
+      operationId: getStreaks
+      tags: [insights]
+      summary: Get current and all-time best streaks
+      responses:
+        "200":
+          description: Streak statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StreaksData"
+
 components:
   parameters:
     AuthorizationSessionHeader:
@@ -472,3 +485,23 @@ components:
           type: string
           format: date-time
       required: [markdown, generatedAt]
+
+    StreakStat:
+      type: object
+      properties:
+        current:
+          type: integer
+        best:
+          type: integer
+      required: [current, best]
+
+    StreaksData:
+      type: object
+      properties:
+        calmWinStreak:
+          $ref: "#/components/schemas/StreakStat"
+        disciplineStreak:
+          $ref: "#/components/schemas/StreakStat"
+        fomoFreeDays:
+          $ref: "#/components/schemas/StreakStat"
+      required: [calmWinStreak, disciplineStreak, fomoFreeDays]

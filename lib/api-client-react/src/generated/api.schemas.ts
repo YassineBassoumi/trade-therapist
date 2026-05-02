@@ -164,6 +164,17 @@ export interface WeeklyReport {
   generatedAt: string;
 }
 
+export interface StreakStat {
+  current: number;
+  best: number;
+}
+
+export interface StreaksData {
+  calmWinStreak: StreakStat;
+  disciplineStreak: StreakStat;
+  fomoFreeDays: StreakStat;
+}
+
 /**
  * Opaque session token — `Bearer <sid>`.
  */

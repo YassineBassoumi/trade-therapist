@@ -27,6 +27,7 @@ import type {
   LogoutSuccess,
   MobileTokenExchangeRequest,
   MobileTokenExchangeSuccess,
+  StreaksData,
   TradeWithJournal,
   WeeklyReport,
 } from "./api.schemas";
@@ -1039,3 +1040,78 @@ export const useGenerateWeeklyReport = <
 > => {
   return useMutation(getGenerateWeeklyReportMutationOptions(options));
 };
+
+/**
+ * @summary Get current and all-time best streaks
+ */
+export const getGetStreaksUrl = () => {
+  return `/api/streaks`;
+};
+
+export const getStreaks = async (
+  options?: RequestInit,
+): Promise<StreaksData> => {
+  return customFetch<StreaksData>(getGetStreaksUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetStreaksQueryKey = () => {
+  return [`/api/streaks`] as const;
+};
+
+export const getGetStreaksQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStreaks>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getStreaks>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetStreaksQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getStreaks>>> = ({
+    signal,
+  }) => getStreaks({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStreaks>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStreaksQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStreaks>>
+>;
+export type GetStreaksQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get current and all-time best streaks
+ */
+
+export function useGetStreaks<
+  TData = Awaited<ReturnType<typeof getStreaks>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getStreaks>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStreaksQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
