@@ -91,8 +91,19 @@ router.post("/trades", async (req, res) => {
     // Auto-calculate PnL if entry and exit provided
     let pnl = body.pnl ?? null;
     if (pnl === null && body.exitPrice != null) {
-      const multiplier = body.side === "long" ? 1 : -1;
-      pnl = multiplier * (body.exitPrice - body.entryPrice) * body.size;
+      const directionMultiplier = body.side === "long" ? 1 : -1;
+      const priceDiff = body.exitPrice - body.entryPrice;
+      const isForex = /^[A-Z]{3}\/?[A-Z]{3}$/i.test(body.ticker.replace("/", ""));
+      if (isForex) {
+        // Forex: size is lot size, 1 standard lot = 100,000 units
+        // For USD-quoted pairs (EUR/USD, GBP/USD, etc.) this gives exact USD P&L
+        // For USD-base pairs (USD/JPY etc.) this is a close approximation
+        pnl = directionMultiplier * priceDiff * body.size * 100000;
+      } else {
+        // Equity / crypto: size is shares or coins
+        pnl = directionMultiplier * priceDiff * body.size;
+      }
+      pnl = Math.round(pnl * 100) / 100; // round to cents
     }
 
     const [trade] = await db
