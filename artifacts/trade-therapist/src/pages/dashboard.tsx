@@ -28,28 +28,28 @@ function StreakCard({ icon, label, current, best, unit, color, bgColor, borderCo
   const isActive = current > 0;
   return (
     <Card className={`border overflow-hidden transition-all ${isActive ? borderColor : "border-border"}`}>
-      {isActive && <div className={`h-0.5 w-full ${bgColor}`} />}
+      <div className={`h-1 w-full ${isActive ? bgColor : "bg-border"}`} />
       <CardContent className="p-5">
-        <div className="flex items-start justify-between mb-3">
+        <div className="flex items-start justify-between mb-4">
           <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${isActive ? bgColor : "bg-secondary"}`}>
             <span className={isActive ? color : "text-muted-foreground"}>{icon}</span>
           </div>
-          {best > 0 && (
-            <div className="text-right">
-              <div className="text-[10px] text-muted-foreground uppercase tracking-widest">Best</div>
-              <div className="text-sm font-mono font-bold text-muted-foreground">{best}</div>
+          <div className="text-right">
+            <div className="text-[10px] text-muted-foreground uppercase tracking-widest">Personal best</div>
+            <div className={`text-2xl font-black font-mono tabular-nums ${isActive ? "text-muted-foreground" : "text-muted-foreground/50"}`}>
+              {best}
             </div>
-          )}
+          </div>
         </div>
 
-        <div className="mt-2">
-          <div className={`text-4xl font-black font-mono tracking-tight ${isActive ? color : "text-muted-foreground/40"}`}>
+        <div className="mt-1">
+          <div className={`text-7xl font-black font-mono tabular-nums leading-none ${isActive ? color : "text-muted-foreground/25"}`}>
             {current}
           </div>
-          <div className="text-xs text-muted-foreground mt-0.5">{unit}</div>
+          <div className="text-xs text-muted-foreground mt-2 font-medium">{unit}</div>
         </div>
 
-        <div className="mt-3 pt-3 border-t border-border">
+        <div className="mt-4 pt-3 border-t border-border">
           <div className="text-sm font-semibold text-foreground">{label}</div>
           <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{description}</div>
         </div>
