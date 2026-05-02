@@ -143,7 +143,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-3">
           <Button variant="outline" onClick={handleSeed} disabled={seeding} className="border-border">
             <RefreshCw className={`mr-2 h-4 w-4 ${seeding ? "animate-spin" : ""}`} />
-            {seeding ? "Loading..." : "Load Demo Data"}
+            {seeding ? "Resetting..." : "Reset to demo"}
           </Button>
           <Button onClick={() => setLocation("/trades/new")} className="gap-2">
             <PlusCircle className="h-4 w-4" />
