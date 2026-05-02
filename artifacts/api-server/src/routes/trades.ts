@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, tradesTable, journalsTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, inArray } from "drizzle-orm";
 import { analyzeTradeWithGroq } from "../lib/groq";
 import { CreateTradeBody, DeleteTradeParams } from "@workspace/api-zod";
 import { logger } from "../lib/logger";
@@ -29,7 +29,7 @@ router.get("/trades", async (req, res) => {
           .where(
             tradeIds.length === 1
               ? eq(journalsTable.tradeId, tradeIds[0])
-              : journalsTable.tradeId.in(tradeIds),
+              : inArray(journalsTable.tradeId, tradeIds),
           )
       : [];
 

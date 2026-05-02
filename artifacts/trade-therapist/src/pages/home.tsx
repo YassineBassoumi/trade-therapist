@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Activity, ArrowRight, Brain, TrendingUp, Lock } from "lucide-react";
 import { Layout } from "@/components/layout";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function Home() {
@@ -11,10 +11,13 @@ export default function Home() {
   const [, setLocation] = useLocation();
   const [showProModal, setShowProModal] = useState(false);
 
-  if (isAuthenticated) {
-    setLocation("/dashboard");
-    return null;
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      setLocation("/dashboard");
+    }
+  }, [isAuthenticated, setLocation]);
+
+  if (isAuthenticated) return null;
 
   return (
     <Layout>
