@@ -181,9 +181,26 @@ export default function NewTrade() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const entryNum = parseFloat(entryPrice);
+    const sizeNum = parseFloat(size);
     if (!ticker || !entryPrice || !size) {
       toast.error("Please fill out ticker, entry price, and size");
       return;
+    }
+    if (isNaN(entryNum) || entryNum <= 0) {
+      toast.error("Entry price must be a positive number");
+      return;
+    }
+    if (isNaN(sizeNum) || sizeNum <= 0) {
+      toast.error("Size must be a positive number");
+      return;
+    }
+    if (exitPrice) {
+      const exitNum = parseFloat(exitPrice);
+      if (isNaN(exitNum) || exitNum <= 0) {
+        toast.error("Exit price must be a positive number");
+        return;
+      }
     }
     if (!transcript.trim()) {
       toast.error("Please record or type a reflection");
@@ -385,11 +402,14 @@ export default function NewTrade() {
                     <Label htmlFor="size">{meta.sizeLabel}</Label>
                     <Input
                       id="size"
-                      type="number"
-                      step="any"
+                      type="text"
+                      inputMode="decimal"
                       placeholder={meta.sizePlaceholder}
                       value={size}
-                      onChange={e => setSize(e.target.value)}
+                      onChange={e => {
+                        const v = e.target.value;
+                        if (v === "" || /^\d*\.?\d*$/.test(v)) setSize(v);
+                      }}
                       required
                     />
                   </div>
@@ -399,11 +419,14 @@ export default function NewTrade() {
                     <Label htmlFor="entry">Entry Price</Label>
                     <Input
                       id="entry"
-                      type="number"
-                      step="any"
+                      type="text"
+                      inputMode="decimal"
                       placeholder={meta.pricePlaceholder}
                       value={entryPrice}
-                      onChange={e => setEntryPrice(e.target.value)}
+                      onChange={e => {
+                        const v = e.target.value;
+                        if (v === "" || /^\d*\.?\d*$/.test(v)) setEntryPrice(v);
+                      }}
                       required
                     />
                   </div>
@@ -415,26 +438,32 @@ export default function NewTrade() {
                     </Label>
                     <Input
                       id="exit"
-                      type="number"
-                      step="any"
+                      type="text"
+                      inputMode="decimal"
                       placeholder={meta.pricePlaceholder}
                       value={exitPrice}
-                      onChange={e => setExitPrice(e.target.value)}
+                      onChange={e => {
+                        const v = e.target.value;
+                        if (v === "" || /^\d*\.?\d*$/.test(v)) setExitPrice(v);
+                      }}
                     />
                   </div>
 
                   {/* P&L */}
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="pnl">
-                      Realized P&L <span className="text-muted-foreground font-normal">(Optional — in your account currency)</span>
+                      Realized P&L <span className="text-muted-foreground font-normal">(Optional — leave blank to auto-calculate)</span>
                     </Label>
                     <Input
                       id="pnl"
-                      type="number"
-                      step="any"
-                      placeholder="± 0.00"
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="e.g. 195.75 or -80.00"
                       value={pnl}
-                      onChange={e => setPnl(e.target.value)}
+                      onChange={e => {
+                        const v = e.target.value;
+                        if (v === "" || /^-?\d*\.?\d*$/.test(v)) setPnl(v);
+                      }}
                     />
                   </div>
                 </div>
