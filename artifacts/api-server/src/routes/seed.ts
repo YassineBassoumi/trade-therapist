@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, tradesTable, journalsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -208,14 +208,19 @@ router.post("/seed", async (req, res) => {
   }
 
   try {
+    // Delete all existing trades for this user (journals cascade automatically)
     const existing = await db
-      .select()
+      .select({ id: tradesTable.id })
       .from(tradesTable)
       .where(eq(tradesTable.userId, req.user.id));
 
     if (existing.length > 0) {
-      res.json({ message: "Already seeded", count: existing.length });
-      return;
+      const ids = existing.map((t) => t.id);
+      await db.delete(tradesTable).where(
+        ids.length === 1
+          ? eq(tradesTable.id, ids[0])
+          : inArray(tradesTable.id, ids)
+      );
     }
 
     let seeded = 0;

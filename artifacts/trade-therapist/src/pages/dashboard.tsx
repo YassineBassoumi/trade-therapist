@@ -141,12 +141,10 @@ export default function Dashboard() {
           <p className="text-muted-foreground mt-1 text-sm">Review your past trades and Dr. Trade's verdicts.</p>
         </div>
         <div className="flex items-center gap-3">
-          {(!trades || trades.length === 0) && !tradesLoading && (
-            <Button variant="outline" onClick={handleSeed} disabled={seeding} className="border-border">
-              <RefreshCw className={`mr-2 h-4 w-4 ${seeding ? "animate-spin" : ""}`} />
-              Load Demo Data
-            </Button>
-          )}
+          <Button variant="outline" onClick={handleSeed} disabled={seeding} className="border-border">
+            <RefreshCw className={`mr-2 h-4 w-4 ${seeding ? "animate-spin" : ""}`} />
+            {seeding ? "Loading..." : "Load Demo Data"}
+          </Button>
           <Button onClick={() => setLocation("/trades/new")} className="gap-2">
             <PlusCircle className="h-4 w-4" />
             New Trade
