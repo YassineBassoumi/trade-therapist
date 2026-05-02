@@ -8,7 +8,7 @@ export function Sidebar() {
   const { isAuthenticated, login, logout, user } = useAuth();
 
   return (
-    <div className="h-screen w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex flex-col p-4 flex-shrink-0 sticky top-0 left-0">
+    <div className="hidden md:flex h-screen w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex-col p-4 flex-shrink-0 sticky top-0 left-0">
       <div className="flex items-center gap-2 mb-8 px-2">
         <Activity className="h-6 w-6 text-primary" />
         <span className="text-xl font-bold tracking-tight">Dr. Trade</span>
