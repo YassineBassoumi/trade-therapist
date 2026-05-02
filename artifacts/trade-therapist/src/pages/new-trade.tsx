@@ -474,8 +474,9 @@ export default function NewTrade() {
                     </p>
                   </div>
                 ) : (
-                  <div className="p-4 bg-destructive/10 text-destructive border border-destructive/20 rounded-md text-sm">
-                    Speech recognition is not supported in this browser. Please type your reflection below.
+                  <div className="flex items-center gap-3 p-4 bg-muted/40 border border-border rounded-xl text-sm text-muted-foreground">
+                    <Mic className="h-4 w-4 shrink-0 opacity-50" />
+                    Voice not supported in this browser — type your reflection below instead.
                   </div>
                 )}
 
