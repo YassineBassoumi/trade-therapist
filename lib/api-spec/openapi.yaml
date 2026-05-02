@@ -10,14 +10,14 @@ servers:
 tags:
   - name: health
     description: Health operations
-  - name: journal
-    description: Trade journal entries
-  - name: sessions
-    description: Therapy sessions
-  - name: emotions
-    description: Emotion check-ins
+  - name: Auth
+    description: Browser and mobile authentication endpoints.
+  - name: trades
+    description: Trade journal operations
   - name: insights
-    description: Aggregated insights and analytics
+    description: Analytics and insights
+  - name: report
+    description: Weekly psychology report
 
 paths:
   /healthz:
@@ -33,106 +33,164 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
-  /journal-entries:
+  /auth/user:
     get:
-      operationId: listJournalEntries
-      tags: [journal]
-      summary: List all journal entries
+      tags: [Auth]
+      operationId: getCurrentAuthUser
+      summary: Get the currently authenticated user
       parameters:
-        - name: limit
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '200':
+          description: Auth status resolved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUserEnvelope'
+
+  /login:
+    get:
+      tags: [Auth]
+      operationId: beginBrowserLogin
+      summary: Start the browser OIDC login flow
+      parameters:
+        - name: returnTo
           in: query
+          required: false
           schema:
-            type: integer
-            default: 50
-        - name: offset
+            type: string
+      responses:
+        '302':
+          description: Redirect to the OIDC authorization endpoint.
+
+  /callback:
+    get:
+      tags: [Auth]
+      operationId: handleBrowserLoginCallback
+      summary: Complete the browser OIDC login flow
+      parameters:
+        - name: code
           in: query
+          required: false
           schema:
-            type: integer
-            default: 0
+            type: string
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: iss
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uri
+      responses:
+        '302':
+          description: Redirect after login.
+
+  /logout:
+    get:
+      tags: [Auth]
+      operationId: logoutBrowserSession
+      summary: Clear the session and begin OIDC logout
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '302':
+          description: Redirect to OIDC logout.
+
+  /mobile-auth/token-exchange:
+    post:
+      tags: [Auth]
+      operationId: exchangeMobileAuthorizationCode
+      summary: Exchange a mobile OIDC code for a session token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileTokenExchangeRequest'
+      responses:
+        '200':
+          description: Session created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileTokenExchangeSuccess'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /mobile-auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logoutMobileSession
+      summary: Delete a mobile session token
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+      responses:
+        '200':
+          description: Logout processed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutSuccess'
+
+  /trades:
+    get:
+      operationId: listTrades
+      tags: [trades]
+      summary: List all trades with journal analysis
       responses:
         "200":
-          description: List of journal entries
+          description: List of trades
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/JournalEntry"
+                  $ref: "#/components/schemas/TradeWithJournal"
     post:
-      operationId: createJournalEntry
-      tags: [journal]
-      summary: Create a journal entry
+      operationId: createTrade
+      tags: [trades]
+      summary: Create a trade with voice transcript — runs AI analysis
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateJournalEntryBody"
+              $ref: "#/components/schemas/CreateTradeBody"
       responses:
         "201":
-          description: Created journal entry
+          description: Created trade with AI analysis
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/JournalEntry"
+                $ref: "#/components/schemas/TradeWithJournal"
 
-  /journal-entries/{id}:
-    get:
-      operationId: getJournalEntry
-      tags: [journal]
-      summary: Get a journal entry
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Journal entry
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/JournalEntry"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-    put:
-      operationId: updateJournalEntry
-      tags: [journal]
-      summary: Update a journal entry
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateJournalEntryBody"
-      responses:
-        "200":
-          description: Updated journal entry
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/JournalEntry"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+  /trades/{id}:
     delete:
-      operationId: deleteJournalEntry
-      tags: [journal]
-      summary: Delete a journal entry
+      operationId: deleteTrade
+      tags: [trades]
+      summary: Delete a trade
       parameters:
         - name: id
           in: path
@@ -143,193 +201,49 @@ paths:
         "204":
           description: Deleted
 
-  /sessions:
+  /insights:
     get:
-      operationId: listSessions
-      tags: [sessions]
-      summary: List all therapy sessions
+      operationId: getInsights
+      tags: [insights]
+      summary: Get aggregated data for charts
       responses:
         "200":
-          description: List of sessions
+          description: Insights data
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/TherapySession"
+                $ref: "#/components/schemas/InsightsData"
+
+  /report/weekly:
     post:
-      operationId: createSession
-      tags: [sessions]
-      summary: Create a therapy session
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateSessionBody"
-      responses:
-        "201":
-          description: Created session
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TherapySession"
-
-  /sessions/{id}:
-    get:
-      operationId: getSession
-      tags: [sessions]
-      summary: Get a therapy session
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+      operationId: generateWeeklyReport
+      tags: [report]
+      summary: Generate a weekly psychology report in Dr. Trade voice
       responses:
         "200":
-          description: Session
+          description: Markdown report
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TherapySession"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-    put:
-      operationId: updateSession
-      tags: [sessions]
-      summary: Update a therapy session
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateSessionBody"
-      responses:
-        "200":
-          description: Updated session
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TherapySession"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-    delete:
-      operationId: deleteSession
-      tags: [sessions]
-      summary: Delete a therapy session
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "204":
-          description: Deleted
-
-  /emotion-snapshots:
-    get:
-      operationId: listEmotionSnapshots
-      tags: [emotions]
-      summary: List emotion check-ins
-      parameters:
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 30
-      responses:
-        "200":
-          description: List of emotion snapshots
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/EmotionSnapshot"
-    post:
-      operationId: createEmotionSnapshot
-      tags: [emotions]
-      summary: Log an emotion check-in
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateEmotionSnapshotBody"
-      responses:
-        "201":
-          description: Created snapshot
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/EmotionSnapshot"
-
-  /insights/summary:
-    get:
-      operationId: getInsightsSummary
-      tags: [insights]
-      summary: Get aggregated dashboard stats
-      responses:
-        "200":
-          description: Insights summary
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/InsightsSummary"
-
-  /insights/mood-performance:
-    get:
-      operationId: getMoodPerformance
-      tags: [insights]
-      summary: Get P&L grouped by pre-trade emotion
-      responses:
-        "200":
-          description: Mood vs performance data
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/MoodPerformance"
-
-  /insights/recent-activity:
-    get:
-      operationId: getRecentActivity
-      tags: [insights]
-      summary: Get recent activity timeline feed
-      parameters:
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 10
-      responses:
-        "200":
-          description: Recent activity items
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ActivityItem"
+                $ref: "#/components/schemas/WeeklyReport"
 
 components:
+  parameters:
+    AuthorizationSessionHeader:
+      name: Authorization
+      in: header
+      required: false
+      description: Opaque session token — `Bearer <sid>`.
+      schema:
+        type: string
+    SessionCookie:
+      name: sid
+      in: cookie
+      required: false
+      description: Browser session cookie.
+      schema:
+        type: string
+
   schemas:
     HealthStatus:
       type: object
@@ -338,225 +252,223 @@ components:
           type: string
       required: [status]
 
-    ErrorResponse:
+    AuthUser:
       type: object
+      required: [id, email, firstName, lastName, profileImageUrl]
+      properties:
+        id:
+          type: string
+        email:
+          type: [string, 'null']
+          format: email
+        firstName:
+          type: [string, 'null']
+        lastName:
+          type: [string, 'null']
+        profileImageUrl:
+          type: [string, 'null']
+
+    AuthUserEnvelope:
+      type: object
+      required: [user]
+      properties:
+        user:
+          oneOf:
+            - $ref: '#/components/schemas/AuthUser'
+            - type: 'null'
+
+    MobileTokenExchangeRequest:
+      type: object
+      required: [code, code_verifier, redirect_uri, state]
+      properties:
+        code:
+          type: string
+          minLength: 1
+        code_verifier:
+          type: string
+          minLength: 1
+        redirect_uri:
+          type: string
+          minLength: 1
+          format: uri
+        state:
+          type: string
+          minLength: 1
+        nonce:
+          type: string
+          minLength: 1
+
+    MobileTokenExchangeSuccess:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+
+    LogoutSuccess:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+          const: true
+
+    ErrorEnvelope:
+      type: object
+      required: [error]
       properties:
         error:
           type: string
-      required: [error]
 
-    JournalEntry:
+    TradeWithJournal:
       type: object
       properties:
         id:
           type: integer
-        symbol:
+        userId:
           type: string
-        direction:
+        ticker:
+          type: string
+        side:
           type: string
           enum: [long, short]
-        pnl:
+        entryPrice:
           type: number
-        emotionBefore:
+        exitPrice:
+          type: [number, 'null']
+        size:
+          type: number
+        pnl:
+          type: [number, 'null']
+        openedAt:
           type: string
-          enum: [calm, confident, anxious, fearful, greedy, excited, frustrated, neutral]
-        emotionDuring:
-          type: string
-          enum: [calm, confident, anxious, fearful, greedy, excited, frustrated, neutral]
-        emotionAfter:
-          type: string
-          enum: [calm, confident, anxious, fearful, greedy, excited, frustrated, neutral]
-        notes:
-          type: string
-        lessonLearned:
-          type: string
-        ruleFollowed:
-          type: boolean
-        tradeDate:
-          type: string
-          format: date
+          format: date-time
+        closedAt:
+          type: [string, 'null']
+          format: date-time
         createdAt:
           type: string
           format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-      required: [id, symbol, direction, pnl, emotionBefore, emotionDuring, emotionAfter, ruleFollowed, tradeDate, createdAt, updatedAt]
+        journal:
+          oneOf:
+            - $ref: '#/components/schemas/JournalAnalysis'
+            - type: 'null'
+      required: [id, userId, ticker, side, entryPrice, size, openedAt, createdAt]
 
-    CreateJournalEntryBody:
+    JournalAnalysis:
       type: object
       properties:
-        symbol:
+        id:
+          type: integer
+        tradeId:
+          type: integer
+        transcript:
           type: string
-        direction:
+        emotion:
+          type: string
+          enum: [calm, fomo, fear, greed, revenge, hope, frustration, confidence]
+        emotionScore:
+          type: number
+        planFollowingScore:
+          type: number
+        tags:
+          type: array
+          items:
+            type: string
+        verdict:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, tradeId, transcript, emotion, emotionScore, planFollowingScore, tags, verdict, createdAt]
+
+    CreateTradeBody:
+      type: object
+      properties:
+        ticker:
+          type: string
+        side:
           type: string
           enum: [long, short]
+        entryPrice:
+          type: number
+        exitPrice:
+          type: [number, 'null']
+        size:
+          type: number
         pnl:
-          type: number
-        emotionBefore:
-          type: string
-          enum: [calm, confident, anxious, fearful, greedy, excited, frustrated, neutral]
-        emotionDuring:
-          type: string
-          enum: [calm, confident, anxious, fearful, greedy, excited, frustrated, neutral]
-        emotionAfter:
-          type: string
-          enum: [calm, confident, anxious, fearful, greedy, excited, frustrated, neutral]
-        notes:
-          type: string
-        lessonLearned:
-          type: string
-        ruleFollowed:
-          type: boolean
-        tradeDate:
-          type: string
-          format: date
-      required: [symbol, direction, pnl, emotionBefore, emotionDuring, emotionAfter, ruleFollowed, tradeDate]
-
-    TherapySession:
-      type: object
-      properties:
-        id:
-          type: integer
-        title:
-          type: string
-        sessionDate:
-          type: string
-          format: date
-        moodScore:
-          type: integer
-          minimum: 1
-          maximum: 10
-        keyInsights:
-          type: string
-        actionItems:
-          type: string
-        therapistNotes:
-          type: string
-        sessionType:
-          type: string
-          enum: [self-reflection, guided, group]
-        createdAt:
+          type: [number, 'null']
+        openedAt:
           type: string
           format: date-time
-        updatedAt:
+        closedAt:
+          type: [string, 'null']
+          format: date-time
+        transcript:
+          type: string
+      required: [ticker, side, entryPrice, size, openedAt, transcript]
+
+    InsightsData:
+      type: object
+      properties:
+        winRateByEmotion:
+          type: array
+          items:
+            type: object
+            properties:
+              emotion:
+                type: string
+              winRate:
+                type: number
+              tradeCount:
+                type: integer
+            required: [emotion, winRate, tradeCount]
+        pnlByHour:
+          type: array
+          items:
+            type: object
+            properties:
+              hour:
+                type: integer
+              avgPnl:
+                type: number
+              tradeCount:
+                type: integer
+            required: [hour, avgPnl, tradeCount]
+        triggerWords:
+          type: array
+          items:
+            type: object
+            properties:
+              word:
+                type: string
+              count:
+                type: integer
+            required: [word, count]
+        summary:
+          type: object
+          properties:
+            totalTrades:
+              type: integer
+            totalPnl:
+              type: number
+            winRate:
+              type: number
+            mostCommonEmotion:
+              type: string
+            calmWinRate:
+              type: number
+            fomoWinRate:
+              type: number
+          required: [totalTrades, totalPnl, winRate]
+      required: [winRateByEmotion, pnlByHour, triggerWords, summary]
+
+    WeeklyReport:
+      type: object
+      properties:
+        markdown:
+          type: string
+        generatedAt:
           type: string
           format: date-time
-      required: [id, title, sessionDate, moodScore, sessionType, createdAt, updatedAt]
-
-    CreateSessionBody:
-      type: object
-      properties:
-        title:
-          type: string
-        sessionDate:
-          type: string
-          format: date
-        moodScore:
-          type: integer
-          minimum: 1
-          maximum: 10
-        keyInsights:
-          type: string
-        actionItems:
-          type: string
-        therapistNotes:
-          type: string
-        sessionType:
-          type: string
-          enum: [self-reflection, guided, group]
-      required: [title, sessionDate, moodScore, sessionType]
-
-    EmotionSnapshot:
-      type: object
-      properties:
-        id:
-          type: integer
-        emotion:
-          type: string
-          enum: [calm, confident, anxious, fearful, greedy, excited, frustrated, neutral]
-        intensity:
-          type: integer
-          minimum: 1
-          maximum: 10
-        context:
-          type: string
-          enum: [pre-market, during-trading, post-market, general]
-        notes:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-      required: [id, emotion, intensity, context, createdAt]
-
-    CreateEmotionSnapshotBody:
-      type: object
-      properties:
-        emotion:
-          type: string
-          enum: [calm, confident, anxious, fearful, greedy, excited, frustrated, neutral]
-        intensity:
-          type: integer
-          minimum: 1
-          maximum: 10
-        context:
-          type: string
-          enum: [pre-market, during-trading, post-market, general]
-        notes:
-          type: string
-      required: [emotion, intensity, context]
-
-    InsightsSummary:
-      type: object
-      properties:
-        totalTrades:
-          type: integer
-        totalPnl:
-          type: number
-        winRate:
-          type: number
-        avgMoodScore:
-          type: number
-        ruleAdherenceRate:
-          type: number
-        journalStreak:
-          type: integer
-        totalSessions:
-          type: integer
-        topEmotion:
-          type: string
-        bestEmotionPnl:
-          type: string
-      required: [totalTrades, totalPnl, winRate, avgMoodScore, ruleAdherenceRate, journalStreak, totalSessions]
-
-    MoodPerformance:
-      type: object
-      properties:
-        emotion:
-          type: string
-        avgPnl:
-          type: number
-        tradeCount:
-          type: integer
-        winRate:
-          type: number
-      required: [emotion, avgPnl, tradeCount, winRate]
-
-    ActivityItem:
-      type: object
-      properties:
-        id:
-          type: string
-        type:
-          type: string
-          enum: [journal, session, emotion]
-        title:
-          type: string
-        subtitle:
-          type: string
-        timestamp:
-          type: string
-          format: date-time
-        meta:
-          type: string
-      required: [id, type, title, timestamp]
+      required: [markdown, generatedAt]
