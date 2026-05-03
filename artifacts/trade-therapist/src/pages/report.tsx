@@ -5,6 +5,7 @@ import {
   useListReports, getListReportsQueryKey,
   useGetReport, getGetReportQueryKey,
   useGenerateWeeklyReport,
+  useDeleteReport,
   type ReportSummary,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -12,7 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   FileText, Loader2, Sparkles, Calendar,
-  TrendingUp, TrendingDown, Brain, ChevronRight, RotateCcw,
+  TrendingUp, TrendingDown, Brain, ChevronRight,
+  RotateCcw, Trash2, AlertTriangle,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -33,64 +35,125 @@ function ReportCard({
   report,
   isSelected,
   onClick,
+  onDelete,
+  isDeleting,
 }: {
   report: ReportSummary;
   isSelected: boolean;
   onClick: () => void;
+  onDelete: () => void;
+  isDeleting: boolean;
 }) {
+  const [confirming, setConfirming] = useState(false);
   const pnlPositive = report.totalPnl != null && report.totalPnl >= 0;
   const emotionColor = report.dominantEmotion
     ? emotionColors[report.dominantEmotion] ?? "#64748b"
     : "#64748b";
 
+  function handleTrashClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    setConfirming(true);
+  }
+
+  function handleConfirm(e: React.MouseEvent) {
+    e.stopPropagation();
+    setConfirming(false);
+    onDelete();
+  }
+
+  function handleCancel(e: React.MouseEvent) {
+    e.stopPropagation();
+    setConfirming(false);
+  }
+
   return (
-    <button
-      onClick={onClick}
-      className={`w-full text-left rounded-xl border px-4 py-3.5 transition-all group ${
+    <div
+      className={`w-full rounded-xl border transition-all group ${
         isSelected
           ? "border-primary/50 bg-primary/8 shadow-sm shadow-primary/10"
           : "border-border bg-card/60 hover:border-border/80 hover:bg-card"
-      }`}
+      } ${isDeleting ? "opacity-50 pointer-events-none" : ""}`}
     >
-      {/* Top row: date range + arrow */}
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="text-xs font-semibold text-foreground">
-          {formatDateRange(report.weekStart, report.weekEnd)}
-        </span>
-        <ChevronRight className={`h-3.5 w-3.5 flex-shrink-0 transition-colors ${isSelected ? "text-primary" : "text-muted-foreground/40 group-hover:text-muted-foreground"}`} />
-      </div>
+      {/* Confirm-delete overlay */}
+      {confirming ? (
+        <div className="px-4 py-3.5 flex flex-col gap-2.5">
+          <div className="flex items-center gap-2 text-amber-400">
+            <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="text-xs font-semibold">Delete this report?</span>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {formatDateRange(report.weekStart, report.weekEnd)} — this cannot be undone.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={handleConfirm}
+              className="flex-1 text-xs font-semibold rounded-lg px-3 py-1.5 bg-red-500/15 text-red-400 border border-red-500/20 hover:bg-red-500/25 transition-colors"
+            >
+              {isDeleting ? <Loader2 className="h-3 w-3 animate-spin mx-auto" /> : "Yes, delete"}
+            </button>
+            <button
+              onClick={handleCancel}
+              className="flex-1 text-xs font-semibold rounded-lg px-3 py-1.5 bg-secondary/60 text-muted-foreground border border-border hover:bg-secondary transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={onClick}
+          className="w-full text-left px-4 py-3.5"
+        >
+          {/* Top row: date range + actions */}
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-xs font-semibold text-foreground">
+              {formatDateRange(report.weekStart, report.weekEnd)}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleTrashClick}
+                className="opacity-0 group-hover:opacity-100 focus:opacity-100 h-5 w-5 flex items-center justify-center rounded text-muted-foreground/50 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                title="Delete report"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+              <ChevronRight className={`h-3.5 w-3.5 flex-shrink-0 transition-colors ${isSelected ? "text-primary" : "text-muted-foreground/40 group-hover:text-muted-foreground"}`} />
+            </div>
+          </div>
 
-      {/* Stats row */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <span className="text-xs text-muted-foreground flex items-center gap-1">
-          <FileText className="h-3 w-3" />
-          {report.tradeCount} {report.tradeCount === 1 ? "trade" : "trades"}
-        </span>
+          {/* Stats row */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <FileText className="h-3 w-3" />
+              {report.tradeCount} {report.tradeCount === 1 ? "trade" : "trades"}
+            </span>
 
-        {report.totalPnl != null && (
-          <span className={`text-xs font-mono font-semibold flex items-center gap-0.5 ${pnlPositive ? "text-emerald-400" : "text-red-400"}`}>
-            {pnlPositive
-              ? <TrendingUp className="h-3 w-3" />
-              : <TrendingDown className="h-3 w-3" />}
-            {pnlPositive ? "+" : ""}${Math.abs(report.totalPnl).toFixed(0)}
-          </span>
-        )}
+            {report.totalPnl != null && (
+              <span className={`text-xs font-mono font-semibold flex items-center gap-0.5 ${pnlPositive ? "text-emerald-400" : "text-red-400"}`}>
+                {pnlPositive
+                  ? <TrendingUp className="h-3 w-3" />
+                  : <TrendingDown className="h-3 w-3" />}
+                {pnlPositive ? "+" : ""}${Math.abs(report.totalPnl).toFixed(0)}
+              </span>
+            )}
 
-        {report.dominantEmotion && (
-          <span
-            className="text-xs font-semibold capitalize px-1.5 py-0.5 rounded"
-            style={{ color: emotionColor, backgroundColor: `${emotionColor}18` }}
-          >
-            {report.dominantEmotion}
-          </span>
-        )}
-      </div>
+            {report.dominantEmotion && (
+              <span
+                className="text-xs font-semibold capitalize px-1.5 py-0.5 rounded"
+                style={{ color: emotionColor, backgroundColor: `${emotionColor}18` }}
+              >
+                {report.dominantEmotion}
+              </span>
+            )}
+          </div>
 
-      {/* Generated at */}
-      <p className="text-xs text-muted-foreground/50 mt-1.5">
-        Generated {format(parseISO(report.generatedAt), "MMM d 'at' h:mm a")}
-      </p>
-    </button>
+          {/* Generated at */}
+          <p className="text-xs text-muted-foreground/50 mt-1.5">
+            Generated {format(parseISO(report.generatedAt), "MMM d 'at' h:mm a")}
+          </p>
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -99,6 +162,7 @@ export default function Report() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) setLocation("/");
@@ -129,6 +193,7 @@ export default function Report() {
   );
 
   const generateReport = useGenerateWeeklyReport();
+  const deleteReport = useDeleteReport();
 
   const handleGenerate = () => {
     generateReport.mutate(undefined, {
@@ -139,6 +204,26 @@ export default function Report() {
       },
       onError: () => {
         toast.error("Failed to generate report. Make sure you have enough trade data.");
+      },
+    });
+  };
+
+  const handleDelete = (id: number) => {
+    setDeletingId(id);
+    deleteReport.mutate({ id }, {
+      onSuccess: () => {
+        // Pick the next report to select after deletion
+        const remaining = (reports ?? []).filter((r) => r.id !== id);
+        const next = remaining[0] ?? null;
+        setSelectedId(next ? next.id : null);
+        queryClient.invalidateQueries({ queryKey: getListReportsQueryKey() });
+        toast.success("Report deleted.");
+      },
+      onError: () => {
+        toast.error("Failed to delete report.");
+      },
+      onSettled: () => {
+        setDeletingId(null);
       },
     });
   };
@@ -240,6 +325,8 @@ export default function Report() {
                   report={report}
                   isSelected={selectedId === report.id}
                   onClick={() => setSelectedId(report.id)}
+                  onDelete={() => handleDelete(report.id)}
+                  isDeleting={deletingId === report.id}
                 />
               ))}
             </div>
@@ -271,7 +358,7 @@ export default function Report() {
                     <div className="flex items-center gap-5">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-0.5">
-                          Week of
+                          Trades analyzed
                         </p>
                         <p className="text-sm font-bold text-foreground">
                           {formatDateRange(selectedReport.weekStart, selectedReport.weekEnd)}
@@ -331,6 +418,18 @@ export default function Report() {
                           ? <Loader2 className="h-3 w-3 animate-spin" />
                           : <RotateCcw className="h-3 w-3" />}
                         New Report
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(selectedReport.id)}
+                        disabled={deletingId === selectedReport.id}
+                        className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
+                      >
+                        {deletingId === selectedReport.id
+                          ? <Loader2 className="h-3 w-3 animate-spin" />
+                          : <Trash2 className="h-3 w-3" />}
+                        Delete
                       </Button>
                     </div>
                   </div>

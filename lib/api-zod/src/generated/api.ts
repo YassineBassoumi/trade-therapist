@@ -239,6 +239,13 @@ export const GetReportResponse = zod.object({
 });
 
 /**
+ * @summary Delete a saved report by ID
+ */
+export const DeleteReportParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
  * @summary Get current and all-time best streaks
  */
 export const GetStreaksResponse = zod.object({

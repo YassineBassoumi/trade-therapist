@@ -205,6 +205,36 @@ router.get("/reports/:id", async (req, res) => {
   }
 });
 
+// DELETE /api/reports/:id — delete a saved report
+router.delete("/reports/:id", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid report ID" });
+    return;
+  }
+  try {
+    const [report] = await db
+      .select({ id: reportsTable.id, userId: reportsTable.userId })
+      .from(reportsTable)
+      .where(eq(reportsTable.id, id));
+
+    if (!report || report.userId !== req.user.id) {
+      res.status(404).json({ error: "Report not found" });
+      return;
+    }
+
+    await db.delete(reportsTable).where(eq(reportsTable.id, id));
+    res.status(204).send();
+  } catch (err) {
+    req.log.error({ err }, "Failed to delete report");
+    res.status(500).json({ error: "Failed to delete report" });
+  }
+});
+
 function toSavedReport(r: typeof reportsTable.$inferSelect) {
   return {
     id: r.id,

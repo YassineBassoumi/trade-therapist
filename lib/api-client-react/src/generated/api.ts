@@ -1203,6 +1203,90 @@ export function useGetReport<
 }
 
 /**
+ * @summary Delete a saved report by ID
+ */
+export const getDeleteReportUrl = (id: number) => {
+  return `/api/reports/${id}`;
+};
+
+export const deleteReport = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteReportUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteReportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteReport>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteReport>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteReport"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteReport>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteReport(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteReportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteReport>>
+>;
+
+export type DeleteReportMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Delete a saved report by ID
+ */
+export const useDeleteReport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteReport>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteReport>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteReportMutationOptions(options));
+};
+
+/**
  * @summary Get current and all-time best streaks
  */
 export const getGetStreaksUrl = () => {
