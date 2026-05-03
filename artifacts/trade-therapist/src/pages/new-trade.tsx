@@ -101,6 +101,7 @@ export default function NewTrade() {
 
   const recognitionRef = useRef<any>(null);
   const finalTranscriptRef = useRef("");
+  const intentionalStopRef = useRef(false);
 
   const createTrade = useCreateTrade();
   const [analysisResult, setAnalysisResult] = useState<any>(null);
@@ -139,13 +140,24 @@ export default function NewTrade() {
     };
 
     recognition.onerror = (event: any) => {
-      if (event.error === "not-allowed") {
-        toast.error("Microphone access denied. Please type your reflection instead.");
-        setIsRecording(false);
+      intentionalStopRef.current = true;
+      setIsRecording(false);
+      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+        toast.error("Microphone access denied. Allow mic access in your browser then try again.");
+      } else if (event.error === "audio-capture") {
+        toast.error("No microphone found. Plug one in or type your reflection instead.");
+      } else if (event.error === "network") {
+        toast.error("Network error during speech recognition. Type your reflection instead.");
+      } else if (event.error !== "aborted") {
+        toast.error("Recording failed — type your reflection instead.");
       }
     };
 
     recognition.onend = () => {
+      if (!intentionalStopRef.current) {
+        toast.error("Recording stopped unexpectedly. Make sure microphone permission is allowed.");
+      }
+      intentionalStopRef.current = false;
       setIsRecording(false);
     };
 
@@ -161,15 +173,17 @@ export default function NewTrade() {
   const toggleRecording = () => {
     if (!recognitionRef.current) return;
     if (isRecording) {
+      intentionalStopRef.current = true;
       recognitionRef.current.stop();
       setIsRecording(false);
     } else {
       try {
+        intentionalStopRef.current = false;
         finalTranscriptRef.current = transcript ? transcript + " " : "";
         recognitionRef.current.start();
         setIsRecording(true);
       } catch (e) {
-        toast.error("Failed to start recording");
+        toast.error("Could not start recording. Make sure microphone access is allowed in your browser.");
       }
     }
   };
