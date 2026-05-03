@@ -111,9 +111,9 @@ export default function Insights() {
   const calmWr = insights.summary.calmWinRate;
   const fomoWr = insights.summary.fomoWinRate;
   let diagnosisLine = "";
-  if (calmWr !== null && fomoWr !== null) {
+  if (calmWr != null && fomoWr != null) {
     diagnosisLine = `Calm trades win ${calmWr.toFixed(0)}% of the time. FOMO trades: ${fomoWr.toFixed(0)}%. That gap is your entire edge.`;
-  } else if (calmWr !== null) {
+  } else if (calmWr != null) {
     diagnosisLine = `When you're calm, you win ${calmWr.toFixed(0)}% of the time. The data doesn't lie — emotion is the variable.`;
   } else if (winRate >= 50) {
     diagnosisLine = `${winRate.toFixed(0)}% win rate across ${insights.summary.totalTrades} trades. The question is: which emotional states are dragging it down?`;
@@ -260,7 +260,11 @@ export default function Insights() {
                 >
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} vertical={true} stroke="#1e293b" />
                   <XAxis type="number" domain={[0, 100]} tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={(v) => `${v}%`} axisLine={false} tickLine={false} />
-                  <YAxis dataKey="emotion" type="category" tick={{ fill: '#cbd5e1', fontSize: 12, textTransform: 'capitalize' }} width={90} axisLine={false} tickLine={false} />
+                  <YAxis dataKey="emotion" type="category" tick={({ x, y, payload }: any) => (
+                    <text x={x} y={y} dy={4} textAnchor="end" fill="#cbd5e1" fontSize={12}>
+                      {String(payload.value).charAt(0).toUpperCase() + String(payload.value).slice(1)}
+                    </text>
+                  )} width={90} axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
                   <ReferenceLine x={winRate} stroke="#475569" strokeDasharray="4 3" strokeWidth={1} />
                   <Bar dataKey="winRate" name="Win Rate" radius={[0, 6, 6, 0]} maxBarSize={22}>
