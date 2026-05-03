@@ -25,8 +25,8 @@ router.post("/report/weekly", async (req, res) => {
 
     const recentTrades = allTrades.filter((t) => new Date(t.openedAt) >= sevenDaysAgo);
 
-    // Use recent trades if available, otherwise fall back to most recent 12
-    const tradesToReport = recentTrades.length > 0 ? recentTrades : allTrades.slice(0, 12);
+    // Use recent trades if available, otherwise fall back to ALL trades (sorted newest first)
+    const tradesToReport = recentTrades.length > 0 ? recentTrades : allTrades;
 
     if (tradesToReport.length === 0) {
       const emptyReport = await db

@@ -165,7 +165,7 @@ export default function Insights() {
               </div>
             </div>
             <div className={`text-4xl font-bold font-mono ${pnlPositive ? "text-emerald-400" : "text-red-400"}`}>
-              {pnlPositive ? "+" : ""}${Math.abs(insights.summary.totalPnl).toFixed(2)}
+              {pnlPositive ? "+" : "-"}${Math.abs(insights.summary.totalPnl).toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">across all closed trades</p>
           </CardContent>
@@ -245,12 +245,12 @@ export default function Insights() {
                 <CardDescription className="text-xs mt-0.5">How your emotional state predicts outcomes</CardDescription>
               </div>
               <div className="text-xs text-muted-foreground font-mono bg-secondary px-2 py-1 rounded">
-                avg {winRate.toFixed(0)}% —
+                avg {winRate.toFixed(0)}%
               </div>
             </div>
           </CardHeader>
           <CardContent className="pt-2">
-            <div className="h-[320px] w-full">
+            <div style={{ height: Math.max(280, insights.winRateByEmotion.length * 52) }} className="w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={insights.winRateByEmotion}
