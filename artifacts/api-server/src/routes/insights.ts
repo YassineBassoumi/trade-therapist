@@ -50,7 +50,7 @@ router.get("/insights", async (req, res) => {
 
     const winRateByEmotion = Array.from(emotionStats.entries()).map(([emotion, stats]) => ({
       emotion,
-      winRate: stats.total > 0 ? Math.round((stats.wins / stats.total) * 100) / 100 : 0,
+      winRate: stats.total > 0 ? Math.round((stats.wins / stats.total) * 1000) / 10 : 0,
       tradeCount: stats.total,
     }));
 
@@ -114,10 +114,10 @@ router.get("/insights", async (req, res) => {
       summary: {
         totalTrades,
         totalPnl: Math.round(totalPnl * 100) / 100,
-        winRate: Math.round(winRate * 100) / 100,
+        winRate: Math.round(winRate * 1000) / 10,
         mostCommonEmotion,
-        calmWinRate: calmStats && calmStats.total > 0 ? Math.round((calmStats.wins / calmStats.total) * 100) / 100 : null,
-        fomoWinRate: fomoStats && fomoStats.total > 0 ? Math.round((fomoStats.wins / fomoStats.total) * 100) / 100 : null,
+        calmWinRate: calmStats && calmStats.total > 0 ? Math.round((calmStats.wins / calmStats.total) * 1000) / 10 : null,
+        fomoWinRate: fomoStats && fomoStats.total > 0 ? Math.round((fomoStats.wins / fomoStats.total) * 1000) / 10 : null,
       },
     });
   } catch (err) {
