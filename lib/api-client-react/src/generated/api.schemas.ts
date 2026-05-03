@@ -159,6 +159,31 @@ export interface InsightsData {
   summary: InsightsDataSummary;
 }
 
+export interface ReportSummary {
+  id: number;
+  weekStart: string;
+  weekEnd: string;
+  tradeCount: number;
+  /** @nullable */
+  totalPnl?: number | null;
+  /** @nullable */
+  dominantEmotion?: string | null;
+  generatedAt: string;
+}
+
+export interface SavedReport {
+  id: number;
+  markdown: string;
+  weekStart: string;
+  weekEnd: string;
+  tradeCount: number;
+  /** @nullable */
+  totalPnl?: number | null;
+  /** @nullable */
+  dominantEmotion?: string | null;
+  generatedAt: string;
+}
+
 export interface WeeklyReport {
   markdown: string;
   generatedAt: string;

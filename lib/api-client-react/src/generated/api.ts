@@ -27,9 +27,10 @@ import type {
   LogoutSuccess,
   MobileTokenExchangeRequest,
   MobileTokenExchangeSuccess,
+  ReportSummary,
+  SavedReport,
   StreaksData,
   TradeWithJournal,
-  WeeklyReport,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -961,7 +962,7 @@ export function useGetInsights<
 }
 
 /**
- * @summary Generate a weekly psychology report in Dr. Trade voice
+ * @summary Generate and save a weekly psychology report in Dr. Trade voice
  */
 export const getGenerateWeeklyReportUrl = () => {
   return `/api/report/weekly`;
@@ -969,8 +970,8 @@ export const getGenerateWeeklyReportUrl = () => {
 
 export const generateWeeklyReport = async (
   options?: RequestInit,
-): Promise<WeeklyReport> => {
-  return customFetch<WeeklyReport>(getGenerateWeeklyReportUrl(), {
+): Promise<SavedReport> => {
+  return customFetch<SavedReport>(getGenerateWeeklyReportUrl(), {
     ...options,
     method: "POST",
   });
@@ -1019,7 +1020,7 @@ export type GenerateWeeklyReportMutationResult = NonNullable<
 export type GenerateWeeklyReportMutationError = ErrorType<unknown>;
 
 /**
- * @summary Generate a weekly psychology report in Dr. Trade voice
+ * @summary Generate and save a weekly psychology report in Dr. Trade voice
  */
 export const useGenerateWeeklyReport = <
   TError = ErrorType<unknown>,
@@ -1040,6 +1041,166 @@ export const useGenerateWeeklyReport = <
 > => {
   return useMutation(getGenerateWeeklyReportMutationOptions(options));
 };
+
+/**
+ * @summary List all saved reports (summaries, newest first)
+ */
+export const getListReportsUrl = () => {
+  return `/api/reports`;
+};
+
+export const listReports = async (
+  options?: RequestInit,
+): Promise<ReportSummary[]> => {
+  return customFetch<ReportSummary[]>(getListReportsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListReportsQueryKey = () => {
+  return [`/api/reports`] as const;
+};
+
+export const getListReportsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listReports>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listReports>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListReportsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listReports>>> = ({
+    signal,
+  }) => listReports({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listReports>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListReportsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listReports>>
+>;
+export type ListReportsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all saved reports (summaries, newest first)
+ */
+
+export function useListReports<
+  TData = Awaited<ReturnType<typeof listReports>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listReports>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListReportsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get a single saved report by ID
+ */
+export const getGetReportUrl = (id: number) => {
+  return `/api/reports/${id}`;
+};
+
+export const getReport = async (
+  id: number,
+  options?: RequestInit,
+): Promise<SavedReport> => {
+  return customFetch<SavedReport>(getGetReportUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetReportQueryKey = (id: number) => {
+  return [`/api/reports/${id}`] as const;
+};
+
+export const getGetReportQueryOptions = <
+  TData = Awaited<ReturnType<typeof getReport>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getReport>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetReportQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getReport>>> = ({
+    signal,
+  }) => getReport(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getReport>>, TError, TData> & {
+    queryKey: QueryKey;
+  };
+};
+
+export type GetReportQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getReport>>
+>;
+export type GetReportQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Get a single saved report by ID
+ */
+
+export function useGetReport<
+  TData = Awaited<ReturnType<typeof getReport>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getReport>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetReportQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get current and all-time best streaks

@@ -193,10 +193,48 @@ export const GetInsightsResponse = zod.object({
 });
 
 /**
- * @summary Generate a weekly psychology report in Dr. Trade voice
+ * @summary Generate and save a weekly psychology report in Dr. Trade voice
  */
 export const GenerateWeeklyReportResponse = zod.object({
+  id: zod.number(),
   markdown: zod.string(),
+  weekStart: zod.coerce.date(),
+  weekEnd: zod.coerce.date(),
+  tradeCount: zod.number(),
+  totalPnl: zod.number().nullish(),
+  dominantEmotion: zod.string().nullish(),
+  generatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary List all saved reports (summaries, newest first)
+ */
+export const ListReportsResponseItem = zod.object({
+  id: zod.number(),
+  weekStart: zod.coerce.date(),
+  weekEnd: zod.coerce.date(),
+  tradeCount: zod.number(),
+  totalPnl: zod.number().nullish(),
+  dominantEmotion: zod.string().nullish(),
+  generatedAt: zod.coerce.date(),
+});
+export const ListReportsResponse = zod.array(ListReportsResponseItem);
+
+/**
+ * @summary Get a single saved report by ID
+ */
+export const GetReportParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetReportResponse = zod.object({
+  id: zod.number(),
+  markdown: zod.string(),
+  weekStart: zod.coerce.date(),
+  weekEnd: zod.coerce.date(),
+  tradeCount: zod.number(),
+  totalPnl: zod.number().nullish(),
+  dominantEmotion: zod.string().nullish(),
   generatedAt: zod.coerce.date(),
 });
 

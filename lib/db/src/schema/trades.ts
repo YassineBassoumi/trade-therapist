@@ -29,7 +29,21 @@ export const journalsTable = pgTable("journals", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const reportsTable = pgTable("reports", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
+  markdown: text("markdown").notNull(),
+  weekStart: timestamp("week_start").notNull(),
+  weekEnd: timestamp("week_end").notNull(),
+  tradeCount: integer("trade_count").notNull().default(0),
+  totalPnl: real("total_pnl"),
+  dominantEmotion: text("dominant_emotion"),
+  generatedAt: timestamp("generated_at").defaultNow().notNull(),
+});
+
 export type Trade = typeof tradesTable.$inferSelect;
 export type InsertTrade = typeof tradesTable.$inferInsert;
 export type Journal = typeof journalsTable.$inferSelect;
 export type InsertJournal = typeof journalsTable.$inferInsert;
+export type Report = typeof reportsTable.$inferSelect;
+export type InsertReport = typeof reportsTable.$inferInsert;

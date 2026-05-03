@@ -218,14 +218,54 @@ paths:
     post:
       operationId: generateWeeklyReport
       tags: [report]
-      summary: Generate a weekly psychology report in Dr. Trade voice
+      summary: Generate and save a weekly psychology report in Dr. Trade voice
       responses:
         "200":
-          description: Markdown report
+          description: Saved report
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WeeklyReport"
+                $ref: "#/components/schemas/SavedReport"
+
+  /reports:
+    get:
+      operationId: listReports
+      tags: [report]
+      summary: List all saved reports (summaries, newest first)
+      responses:
+        "200":
+          description: List of report summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportSummary"
+
+  /reports/{id}:
+    get:
+      operationId: getReport
+      tags: [report]
+      summary: Get a single saved report by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Full saved report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedReport"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
 
   /streaks:
     get:
@@ -475,6 +515,52 @@ components:
               type: number
           required: [totalTrades, totalPnl, winRate]
       required: [winRateByEmotion, pnlByHour, triggerWords, summary]
+
+    ReportSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        weekStart:
+          type: string
+          format: date-time
+        weekEnd:
+          type: string
+          format: date-time
+        tradeCount:
+          type: integer
+        totalPnl:
+          type: [number, 'null']
+        dominantEmotion:
+          type: [string, 'null']
+        generatedAt:
+          type: string
+          format: date-time
+      required: [id, weekStart, weekEnd, tradeCount, generatedAt]
+
+    SavedReport:
+      type: object
+      properties:
+        id:
+          type: integer
+        markdown:
+          type: string
+        weekStart:
+          type: string
+          format: date-time
+        weekEnd:
+          type: string
+          format: date-time
+        tradeCount:
+          type: integer
+        totalPnl:
+          type: [number, 'null']
+        dominantEmotion:
+          type: [string, 'null']
+        generatedAt:
+          type: string
+          format: date-time
+      required: [id, markdown, weekStart, weekEnd, tradeCount, generatedAt]
 
     WeeklyReport:
       type: object
