@@ -351,12 +351,13 @@ export default function Home() {
       {/* Demo modal */}
       <Dialog open={showDemoModal} onOpenChange={setShowDemoModal}>
         <DialogContent className="sm:max-w-3xl bg-card border-border p-0 overflow-hidden">
-          <div className="aspect-video w-full bg-background flex items-center justify-center">
-            <div className="text-center space-y-3 p-8">
-              <Play className="h-12 w-12 text-primary mx-auto opacity-50" />
-              <p className="text-muted-foreground text-sm">Demo video coming soon.</p>
-              <p className="text-xs text-muted-foreground">Replace this with your Loom embed URL in <code className="bg-secondary px-1 rounded">home.tsx</code>.</p>
-            </div>
+          <div className="aspect-video w-full bg-black">
+            <iframe
+              src="https://www.loom.com/embed/25a5776a2dc649c581607c58907809be?autoplay=1"
+              allowFullScreen
+              className="w-full h-full"
+              style={{ border: "none" }}
+            />
           </div>
         </DialogContent>
       </Dialog>
