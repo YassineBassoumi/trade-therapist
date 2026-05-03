@@ -1,7 +1,7 @@
 import { useAuth } from "@workspace/replit-auth-web";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Activity, ArrowRight, Brain, TrendingUp, Play, Quote } from "lucide-react";
+import { Activity, ArrowRight, Brain, TrendingUp, Play, Quote, BarChart2, BookOpen, FileText } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -231,24 +231,122 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Footer CTA — Pro moved below fold */}
-      <div className="border-t border-border bg-card/20">
-        <div className="max-w-7xl mx-auto px-6 sm:px-10 py-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-foreground tracking-tight">Ready to understand your trading psychology?</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Free to start. No credit card required.</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" className="text-muted-foreground text-xs" onClick={() => setShowProModal(true)}>
-              Pro $19/mo
-            </Button>
-            <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold" onClick={login}>
-              Start Journaling
+      {/* CTA section */}
+      <div className="border-t border-border relative overflow-hidden">
+        <div
+          className="pointer-events-none absolute inset-0 -z-0"
+          style={{
+            background: "radial-gradient(ellipse 70% 80% at 50% 120%, rgba(16,185,129,0.10) 0%, transparent 70%)",
+          }}
+        />
+        <div className="relative z-10 max-w-3xl mx-auto px-6 sm:px-10 py-20 text-center space-y-6">
+          <h2 className="text-4xl sm:text-5xl font-bold tracking-tight leading-tight">
+            Stop guessing why<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500">you keep losing.</span>
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-lg mx-auto leading-relaxed">
+            One voice note per trade. Dr. Trade does the rest — emotion tagging, behavioral patterns, weekly diagnosis.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <Button
+              size="lg"
+              className="w-full sm:w-auto text-base h-12 px-8 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold tracking-tight"
+              onClick={login}
+            >
+              Start for free
               <ArrowRight className="h-4 w-4" />
             </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="w-full sm:w-auto text-base h-12 px-8 border-border hover:bg-secondary/60 tracking-tight text-muted-foreground"
+              onClick={() => setShowProModal(true)}
+            >
+              Pro $19/mo
+            </Button>
           </div>
+          <p className="text-xs text-muted-foreground">Free to start. No credit card required.</p>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="border-t border-border bg-card/30">
+        <div className="max-w-7xl mx-auto px-6 sm:px-10 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+
+            {/* Brand */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-primary" />
+                <span className="font-bold text-base tracking-tight text-foreground">Dr. Trade</span>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
+                Your trades have feelings. We listen.
+              </p>
+              <p className="text-xs text-muted-foreground/60">
+                Built for Buildathon's 10th Birthday
+              </p>
+            </div>
+
+            {/* Product links */}
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Product</p>
+              <ul className="space-y-2">
+                {[
+                  { icon: BookOpen, label: "Journal", action: login },
+                  { icon: BarChart2, label: "Psychology Insights", action: login },
+                  { icon: FileText, label: "Weekly Report", action: login },
+                ].map(({ icon: Icon, label, action }) => (
+                  <li key={label}>
+                    <button
+                      onClick={action}
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Stats / social proof */}
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">By the numbers</p>
+              <ul className="space-y-2">
+                {[
+                  "8 behavioral emotions tracked",
+                  "Equities, Forex & Crypto",
+                  "AI-powered in under 3 seconds",
+                  "Weekly psychology diagnosis",
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <span className="text-primary mt-0.5 text-xs">—</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom bar */}
+          <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground/60">
+              © {new Date().getFullYear()} Trade Therapist. Built with Replit.
+            </p>
+            <p
+              className="text-xs"
+              style={{
+                fontStyle: "italic",
+                color: "#10b981",
+                fontFamily: "'Newsreader', 'Georgia', serif",
+              }}
+            >
+              "Your trades have feelings. We listen."
+            </p>
+          </div>
+        </div>
+      </footer>
 
       {/* Demo modal */}
       <Dialog open={showDemoModal} onOpenChange={setShowDemoModal}>
