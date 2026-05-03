@@ -136,55 +136,61 @@ export default function Insights() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         {/* Total Trades */}
         <Card className="border-border bg-card overflow-hidden">
           <div className="h-0.5 w-full bg-slate-600" />
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Total Trades</p>
-              <div className="h-8 w-8 rounded-lg bg-slate-800 flex items-center justify-center">
-                <Activity className="h-4 w-4 text-slate-400" />
+              <div className="h-7 w-7 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0">
+                <Activity className="h-3.5 w-3.5 text-slate-400" />
               </div>
             </div>
-            <div className="text-4xl font-bold font-mono text-foreground">{insights.summary.totalTrades}</div>
-            <p className="text-xs text-muted-foreground mt-1">all markets combined</p>
+            <div className="text-4xl font-bold font-mono text-foreground leading-none">{insights.summary.totalTrades}</div>
+            <p className="text-xs text-muted-foreground mt-1.5 whitespace-nowrap">all markets</p>
           </CardContent>
         </Card>
 
-        {/* Total P&L */}
+        {/* Total P&L — adaptive font so large values never clip */}
         <Card className="border-border bg-card overflow-hidden">
           <div className={`h-0.5 w-full ${pnlPositive ? "bg-emerald-500" : "bg-red-500"}`} />
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Total P&L</p>
-              <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${pnlPositive ? "bg-emerald-500/10" : "bg-red-500/10"}`}>
+              <div className={`h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 ${pnlPositive ? "bg-emerald-500/10" : "bg-red-500/10"}`}>
                 {pnlPositive
-                  ? <TrendingUp className="h-4 w-4 text-emerald-400" />
-                  : <TrendingDown className="h-4 w-4 text-red-400" />}
+                  ? <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
+                  : <TrendingDown className="h-3.5 w-3.5 text-red-400" />}
               </div>
             </div>
-            <div className={`text-4xl font-bold font-mono ${pnlPositive ? "text-emerald-400" : "text-red-400"}`}>
-              {pnlPositive ? "+" : "-"}${Math.abs(insights.summary.totalPnl).toFixed(2)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">across all closed trades</p>
+            {(() => {
+              const pnlStr = `${pnlPositive ? "+" : "-"}$${Math.abs(insights.summary.totalPnl).toFixed(2)}`;
+              const size = pnlStr.length <= 7 ? "text-4xl" : pnlStr.length <= 10 ? "text-3xl" : "text-2xl";
+              return (
+                <div className={`${size} font-bold font-mono leading-none whitespace-nowrap ${pnlPositive ? "text-emerald-400" : "text-red-400"}`}>
+                  {pnlStr}
+                </div>
+              );
+            })()}
+            <p className="text-xs text-muted-foreground mt-1.5 whitespace-nowrap">all closed trades</p>
           </CardContent>
         </Card>
 
         {/* Global Win Rate */}
         <Card className="border-border bg-card overflow-hidden">
           <div className={`h-0.5 w-full ${winRate >= 50 ? "bg-emerald-500" : winRate >= 40 ? "bg-yellow-500" : "bg-red-500"}`} />
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Win Rate</p>
-              <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${winRate >= 50 ? "bg-emerald-500/10" : "bg-yellow-500/10"}`}>
-                <Percent className={`h-4 w-4 ${winRate >= 50 ? "text-emerald-400" : "text-yellow-400"}`} />
+              <div className={`h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 ${winRate >= 50 ? "bg-emerald-500/10" : "bg-yellow-500/10"}`}>
+                <Percent className={`h-3.5 w-3.5 ${winRate >= 50 ? "text-emerald-400" : "text-yellow-400"}`} />
               </div>
             </div>
-            <div className={`text-4xl font-bold font-mono ${winRate >= 50 ? "text-emerald-400" : winRate >= 40 ? "text-yellow-400" : "text-red-400"}`}>
+            <div className={`text-4xl font-bold font-mono leading-none ${winRate >= 50 ? "text-emerald-400" : winRate >= 40 ? "text-yellow-400" : "text-red-400"}`}>
               {winRate.toFixed(1)}%
             </div>
-            <div className="mt-2 h-1.5 rounded-full bg-secondary overflow-hidden">
+            <div className="mt-2 h-1 rounded-full bg-secondary overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all ${winRate >= 50 ? "bg-emerald-500" : winRate >= 40 ? "bg-yellow-500" : "bg-red-500"}`}
                 style={{ width: `${Math.min(winRate, 100)}%` }}
@@ -196,24 +202,24 @@ export default function Insights() {
         {/* Dominant Emotion */}
         <Card className="border-border bg-card overflow-hidden">
           <div className="h-0.5 w-full" style={{ backgroundColor: emotionColors[insights.summary.mostCommonEmotion || ""] || "#64748b" }} />
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Dominant Emotion</p>
-              <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${emotionColors[insights.summary.mostCommonEmotion || ""] || "#64748b"}20` }}>
-                <Brain className="h-4 w-4" style={{ color: emotionColors[insights.summary.mostCommonEmotion || ""] || "#94a3b8" }} />
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Dominant</p>
+              <div className="h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${emotionColors[insights.summary.mostCommonEmotion || ""] || "#64748b"}20` }}>
+                <Brain className="h-3.5 w-3.5" style={{ color: emotionColors[insights.summary.mostCommonEmotion || ""] || "#94a3b8" }} />
               </div>
             </div>
-            <div className="text-4xl font-bold font-mono capitalize" style={{ color: emotionColors[insights.summary.mostCommonEmotion || ""] || "inherit" }}>
+            <div className="text-4xl font-bold font-mono leading-none capitalize whitespace-nowrap" style={{ color: emotionColors[insights.summary.mostCommonEmotion || ""] || "inherit" }}>
               {insights.summary.mostCommonEmotion || "N/A"}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">most frequent state</p>
+            <p className="text-xs text-muted-foreground mt-1.5 whitespace-nowrap">most frequent state</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Dr. Trade diagnosis banner */}
       {diagnosisLine && (
-        <div className="mb-8 rounded-xl border border-primary/20 bg-primary/5 px-6 py-4 flex items-start gap-4">
+        <div className="mb-5 rounded-xl border border-primary/20 bg-primary/5 px-5 py-3.5 flex items-start gap-3">
           <Brain className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-1">Dr. Trade Diagnosis</p>
