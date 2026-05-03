@@ -100,11 +100,15 @@ function ReportCard({
           </div>
         </div>
       ) : (
-        <button
+        /* Using div + role=button to avoid nested <button> DOM violation */
+        <div
+          role="button"
+          tabIndex={0}
           onClick={onClick}
-          className="w-full text-left px-4 py-3.5"
+          onKeyDown={(e) => e.key === "Enter" && onClick()}
+          className="w-full text-left px-4 py-3.5 cursor-pointer"
         >
-          {/* Top row: date range + actions */}
+          {/* Top row: date range + trash */}
           <div className="flex items-center justify-between gap-2 mb-2">
             <span className="text-xs font-semibold text-foreground">
               {formatDateRange(report.weekStart, report.weekEnd)}
@@ -151,7 +155,7 @@ function ReportCard({
           <p className="text-xs text-muted-foreground/50 mt-1.5">
             Generated {format(parseISO(report.generatedAt), "MMM d 'at' h:mm a")}
           </p>
-        </button>
+        </div>
       )}
     </div>
   );

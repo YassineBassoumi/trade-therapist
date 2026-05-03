@@ -5,7 +5,7 @@ import { eq, inArray } from "drizzle-orm";
 const router: IRouter = Router();
 
 const SEED_TRADES = [
-  // --- Equities ---
+  // ─── Equities (7) ────────────────────────────────────────────────────────
   {
     ticker: "TSLA",
     side: "long" as const,
@@ -84,7 +84,7 @@ const SEED_TRADES = [
     emotionScore: 0.84,
     planFollowingScore: 0.2,
     tags: ["panic_sell", "exit_too_early", "broke_rules"],
-    verdict: "Fear exit. You paid a $162 lesson in trusting your stops, not your anxiety.",
+    verdict: "Fear exit. You paid $162 for a lesson in trusting your stops.",
   },
   {
     ticker: "QQQ",
@@ -118,7 +118,8 @@ const SEED_TRADES = [
     tags: ["revenge_trade", "broke_rules", "no_stop_loss"],
     verdict: "Trading while frustrated is gambling. Step away next time.",
   },
-  // --- Forex ---
+
+  // ─── Forex (5) ───────────────────────────────────────────────────────────
   {
     ticker: "EUR/USD",
     side: "long" as const,
@@ -198,6 +199,56 @@ const SEED_TRADES = [
     planFollowingScore: 0.08,
     tags: ["overtrading", "session_violation", "broke_rules"],
     verdict: "Boredom is expensive in Forex. The session was over — so was your edge.",
+  },
+
+  // ─── Crypto (3) ──────────────────────────────────────────────────────────
+  {
+    ticker: "BTC/USDT",
+    side: "long" as const,
+    entryPrice: 62400,
+    exitPrice: 64850,
+    size: 0.15,
+    pnl: 367,
+    openedAt: new Date("2025-04-26T14:00:00Z"),
+    closedAt: new Date("2025-04-26T19:30:00Z"),
+    transcript: "Bitcoin pulled back to the weekly demand zone I had marked. Funding rate was neutral, no major macro events on the calendar. I entered spot with 0.15 BTC, set my stop below the structure low, and targeted the previous high. Held through a small wick, kept my size reasonable. Hit target and closed.",
+    emotion: "calm" as const,
+    emotionScore: 0.88,
+    planFollowingScore: 0.93,
+    tags: ["followed_plan", "disciplined"],
+    verdict: "Demand zone entry, neutral funding, clean stop. That's crypto done right.",
+  },
+  {
+    ticker: "ETH/USDT",
+    side: "long" as const,
+    entryPrice: 3120,
+    exitPrice: 2980,
+    size: 0.8,
+    pnl: -560,
+    openedAt: new Date("2025-04-27T02:30:00Z"),
+    closedAt: new Date("2025-04-27T03:15:00Z"),
+    transcript: "ETH was pumping at 2am and I couldn't sleep. Saw it break 3100 and thought it was going to 3300. I went in with 0.8 ETH at 3x leverage. No stop set because I thought the momentum would hold. It reversed within 20 minutes, I panicked and exited at 2980. I was just gambling because I was FOMO from missing the earlier move.",
+    emotion: "fomo" as const,
+    emotionScore: 0.94,
+    planFollowingScore: 0.03,
+    tags: ["fomo_entry", "leverage_too_high", "no_stop_loss", "overtrading"],
+    verdict: "3x leverage at 2am with no stop isn't a trade, it's a donation.",
+  },
+  {
+    ticker: "DOGE/USDT",
+    side: "long" as const,
+    entryPrice: 0.1640,
+    exitPrice: 0.1395,
+    size: 15000,
+    pnl: -367,
+    openedAt: new Date("2025-04-19T16:00:00Z"),
+    closedAt: new Date("2025-04-19T17:45:00Z"),
+    transcript: "Someone on Discord said DOGE was going to 0.20 because Elon tweeted something. I bought 15,000 DOGE and it just dumped immediately. I held for way too long hoping it would bounce. No plan, no analysis, just vibes. I've done this before and I keep doing it.",
+    emotion: "hope" as const,
+    emotionScore: 0.89,
+    planFollowingScore: 0.02,
+    tags: ["fomo_entry", "low_cap_gamble", "no_stop_loss", "chasing"],
+    verdict: "Discord tips and Elon tweets aren't a trading plan. They're a transfer of wealth.",
   },
 ];
 
