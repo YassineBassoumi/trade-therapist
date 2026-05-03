@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, tradesTable, journalsTable, reportsTable } from "@workspace/db";
-import { eq, gte, inArray, desc } from "drizzle-orm";
+import { eq, inArray, desc } from "drizzle-orm";
 import { generateWeeklyReportWithGroq } from "../lib/groq";
 
 const router: IRouter = Router();
@@ -13,16 +13,20 @@ router.post("/report/weekly", async (req, res) => {
   }
 
   try {
-    const weekEnd = new Date();
-    const weekStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const now = new Date();
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-    const trades = await db
+    // Fetch all user trades ordered by date descending
+    const allTrades = await db
       .select()
       .from(tradesTable)
-      .where(eq(tradesTable.userId, req.user.id));
+      .where(eq(tradesTable.userId, req.user.id))
+      .orderBy(desc(tradesTable.openedAt));
 
-    const recentTrades = trades.filter((t) => new Date(t.openedAt) >= weekStart);
-    const tradesToReport = recentTrades.length > 0 ? recentTrades : trades.slice(0, 12);
+    const recentTrades = allTrades.filter((t) => new Date(t.openedAt) >= sevenDaysAgo);
+
+    // Use recent trades if available, otherwise fall back to most recent 12
+    const tradesToReport = recentTrades.length > 0 ? recentTrades : allTrades.slice(0, 12);
 
     if (tradesToReport.length === 0) {
       const emptyReport = await db
@@ -30,8 +34,8 @@ router.post("/report/weekly", async (req, res) => {
         .values({
           userId: req.user.id,
           markdown: "## No trades found\n\nStart journaling your trades to get a weekly psychology report from Dr. Trade.",
-          weekStart,
-          weekEnd,
+          weekStart: sevenDaysAgo,
+          weekEnd: now,
           tradeCount: 0,
         })
         .returning();
@@ -39,6 +43,12 @@ router.post("/report/weekly", async (req, res) => {
       return;
     }
 
+    // Use actual trade date range for weekStart/weekEnd
+    const sortedByDate = [...tradesToReport].sort((a, b) => new Date(a.openedAt).getTime() - new Date(b.openedAt).getTime());
+    const weekStart = new Date(sortedByDate[0].openedAt);
+    const weekEnd = new Date(sortedByDate[sortedByDate.length - 1].openedAt);
+
+    // Fetch journals
     const tradeIds = tradesToReport.map((t) => t.id);
     const journals = tradeIds.length
       ? await db
@@ -49,9 +59,12 @@ router.post("/report/weekly", async (req, res) => {
 
     const journalByTradeId = new Map(journals.map((j) => [j.tradeId, j]));
 
-    // Compute summary stats for the report row
+    // Compute summary stats
     const closedTrades = tradesToReport.filter((t) => t.pnl != null);
     const totalPnl = closedTrades.reduce((sum, t) => sum + (t.pnl ?? 0), 0);
+    const winners = closedTrades.filter((t) => (t.pnl ?? 0) > 0);
+    const winRate = closedTrades.length > 0 ? (winners.length / closedTrades.length) * 100 : 0;
+
     const emotionCounts = new Map<string, number>();
     for (const j of journals) {
       emotionCounts.set(j.emotion, (emotionCounts.get(j.emotion) ?? 0) + 1);
@@ -62,17 +75,49 @@ router.post("/report/weekly", async (req, res) => {
       if (count > maxCount) { maxCount = count; dominantEmotion = emotion; }
     }
 
-    // Build prompt for AI
-    const lines: string[] = [`Trades and journal entries:\n`];
-    for (const trade of tradesToReport) {
+    const avgPlanScore = journals.length > 0
+      ? journals.reduce((sum, j) => sum + j.planFollowingScore, 0) / journals.length
+      : 0;
+
+    const disciplinedCount = journals.filter((j) => j.planFollowingScore >= 0.7).length;
+    const undisciplinedCount = journals.filter((j) => j.planFollowingScore < 0.4).length;
+
+    // Build a rich, structured prompt for the AI
+    const dateLabel = recentTrades.length > 0
+      ? `the past 7 days (${weekStart.toISOString().split("T")[0]} to ${weekEnd.toISOString().split("T")[0]})`
+      : `the most recent ${tradesToReport.length} trades on record (${weekStart.toISOString().split("T")[0]} to ${weekEnd.toISOString().split("T")[0]})`;
+
+    const summaryBlock = [
+      `PERIOD: ${dateLabel}`,
+      `TOTAL TRADES: ${tradesToReport.length} (${closedTrades.length} closed)`,
+      `TOTAL P&L: ${totalPnl >= 0 ? "+" : ""}$${totalPnl.toFixed(2)}`,
+      `WIN RATE: ${winRate.toFixed(1)}% (${winners.length} wins / ${closedTrades.length} closed)`,
+      `AVG PLAN ADHERENCE SCORE: ${(avgPlanScore * 100).toFixed(0)}%`,
+      `DISCIPLINED TRADES (score ≥ 70%): ${disciplinedCount}`,
+      `UNDISCIPLINED TRADES (score < 40%): ${undisciplinedCount}`,
+      `DOMINANT EMOTION: ${dominantEmotion ?? "N/A"}`,
+      `EMOTION BREAKDOWN: ${Array.from(emotionCounts.entries()).map(([e, c]) => `${e}×${c}`).join(", ")}`,
+    ].join("\n");
+
+    // Build trade lines sorted chronologically
+    const lines: string[] = [
+      `=== AGGREGATE SUMMARY ===`,
+      summaryBlock,
+      ``,
+      `=== INDIVIDUAL TRADES (chronological) ===`,
+    ];
+
+    for (const trade of sortedByDate) {
       const journal = journalByTradeId.get(trade.id);
       lines.push(
-        `Trade: ${trade.ticker} ${trade.side} | Entry: $${trade.entryPrice} | Exit: ${trade.exitPrice ? `$${trade.exitPrice}` : "open"} | P&L: ${trade.pnl != null ? `$${trade.pnl.toFixed(2)}` : "unknown"} | Date: ${trade.openedAt.toISOString().split("T")[0]}`,
+        `Trade: ${trade.ticker} ${trade.side.toUpperCase()} | Entry: ${trade.entryPrice} | Exit: ${trade.exitPrice ?? "open"} | P&L: ${trade.pnl != null ? `${trade.pnl >= 0 ? "+" : ""}$${trade.pnl.toFixed(2)}` : "unknown"} | Date: ${trade.openedAt.toISOString().split("T")[0]}`,
       );
       if (journal) {
-        lines.push(`  Emotion: ${journal.emotion} (${(journal.emotionScore * 100).toFixed(0)}%) | Plan adherence: ${(journal.planFollowingScore * 100).toFixed(0)}% | Tags: ${journal.tags.join(", ")}`);
-        lines.push(`  Reflection: "${journal.transcript}"`);
-        lines.push(`  Dr. Trade said: "${journal.verdict}"`);
+        lines.push(`  Emotion: ${journal.emotion} (intensity ${(journal.emotionScore * 10).toFixed(1)}/10) | Plan score: ${(journal.planFollowingScore * 100).toFixed(0)}% | Tags: ${journal.tags.join(", ")}`);
+        lines.push(`  Trader said: "${journal.transcript}"`);
+        lines.push(`  Dr. Trade's verdict on this trade: "${journal.verdict}"`);
+      } else {
+        lines.push(`  No journal entry for this trade.`);
       }
       lines.push("");
     }
