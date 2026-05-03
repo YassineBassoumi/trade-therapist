@@ -102,6 +102,8 @@ export default function NewTrade() {
   const recognitionRef = useRef<any>(null);
   const finalTranscriptRef = useRef("");
   const intentionalStopRef = useRef(false);
+  const shouldBeRecordingRef = useRef(false);
+  const networkRetryRef = useRef(0);
 
   const createTrade = useCreateTrade();
   const [analysisResult, setAnalysisResult] = useState<any>(null);
@@ -140,24 +142,58 @@ export default function NewTrade() {
     };
 
     recognition.onerror = (event: any) => {
-      intentionalStopRef.current = true;
-      setIsRecording(false);
       if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-        toast.error("Microphone access denied. Allow mic access in your browser then try again.");
+        intentionalStopRef.current = true;
+        shouldBeRecordingRef.current = false;
+        networkRetryRef.current = 0;
+        setIsRecording(false);
+        toast.error("Microphone access denied. Tap the lock icon in your browser address bar to allow it.");
       } else if (event.error === "audio-capture") {
-        toast.error("No microphone found. Plug one in or type your reflection instead.");
+        intentionalStopRef.current = true;
+        shouldBeRecordingRef.current = false;
+        networkRetryRef.current = 0;
+        setIsRecording(false);
+        toast.error("No microphone found. Check your device settings.");
       } else if (event.error === "network") {
-        toast.error("Network error during speech recognition. Type your reflection instead.");
-      } else if (event.error !== "aborted") {
-        toast.error("Recording failed — type your reflection instead.");
+        // Transient cloud speech hiccup — onend will fire next and auto-restart
+        networkRetryRef.current += 1;
+      } else if (event.error === "aborted") {
+        // Intentional stop — ignore
+      } else {
+        intentionalStopRef.current = true;
+        shouldBeRecordingRef.current = false;
+        networkRetryRef.current = 0;
+        setIsRecording(false);
+        toast.error("Recording stopped — type your reflection instead.");
       }
     };
 
     recognition.onend = () => {
-      if (!intentionalStopRef.current) {
+      if (shouldBeRecordingRef.current && !intentionalStopRef.current) {
+        if (networkRetryRef.current > 0 && networkRetryRef.current <= 3) {
+          // Auto-restart after transient network error
+          setTimeout(() => {
+            if (shouldBeRecordingRef.current && recognitionRef.current) {
+              try { recognitionRef.current.start(); } catch {}
+            }
+          }, 300);
+          return;
+        }
+        if (networkRetryRef.current > 3) {
+          networkRetryRef.current = 0;
+          shouldBeRecordingRef.current = false;
+          setIsRecording(false);
+          toast.error("Speech recognition keeps dropping. Check your connection and try again.");
+          return;
+        }
+        // Ended unexpectedly (not a network retry, not intentional)
+        shouldBeRecordingRef.current = false;
+        setIsRecording(false);
         toast.error("Recording stopped unexpectedly. Make sure microphone permission is allowed.");
+        return;
       }
       intentionalStopRef.current = false;
+      networkRetryRef.current = 0;
       setIsRecording(false);
     };
 
@@ -174,15 +210,20 @@ export default function NewTrade() {
     if (!recognitionRef.current) return;
     if (isRecording) {
       intentionalStopRef.current = true;
+      shouldBeRecordingRef.current = false;
+      networkRetryRef.current = 0;
       recognitionRef.current.stop();
       setIsRecording(false);
     } else {
       try {
         intentionalStopRef.current = false;
+        shouldBeRecordingRef.current = true;
+        networkRetryRef.current = 0;
         finalTranscriptRef.current = transcript ? transcript + " " : "";
         recognitionRef.current.start();
         setIsRecording(true);
       } catch (e) {
+        shouldBeRecordingRef.current = false;
         toast.error("Could not start recording. Make sure microphone access is allowed in your browser.");
       }
     }
