@@ -177,7 +177,16 @@ export default function Home() {
             {QUOTE_STRIP.map((q, i) => (
               <div key={i} className="rounded-xl border border-border bg-card p-5 space-y-3">
                 <Quote className="h-5 w-5 text-primary opacity-60" />
-                <p className="text-sm font-medium text-foreground leading-relaxed italic">
+                <p style={{
+                  fontStyle: "italic",
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                  borderLeft: "3px solid #10b981",
+                  paddingLeft: "14px",
+                  color: "#f8fafc",
+                  fontFamily: "'Newsreader', 'Georgia', serif",
+                  lineHeight: 1.45,
+                }}>
                   "{q.verdict}"
                 </p>
                 <div className="flex items-center gap-2 pt-1">

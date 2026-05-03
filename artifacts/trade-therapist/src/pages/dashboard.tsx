@@ -263,8 +263,17 @@ export default function Dashboard() {
                           </span>
                         </div>
                         <div className="mb-4">
-                          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Dr. Trade Verdict</h4>
-                          <p className="text-sm font-medium border-l-2 border-primary pl-3 py-1 italic">
+                          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Dr. Trade Verdict</h4>
+                          <p style={{
+                            fontStyle: "italic",
+                            fontSize: "1.2rem",
+                            fontWeight: 600,
+                            borderLeft: "3px solid #10b981",
+                            paddingLeft: "16px",
+                            color: "#f8fafc",
+                            fontFamily: "'Newsreader', 'Georgia', serif",
+                            lineHeight: 1.4,
+                          }}>
                             "{trade.journal.verdict}"
                           </p>
                         </div>

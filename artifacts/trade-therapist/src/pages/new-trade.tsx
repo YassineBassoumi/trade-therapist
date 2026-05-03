@@ -293,8 +293,19 @@ export default function NewTrade() {
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-2 border-b border-border pb-2">The Verdict</h3>
-                  <p className="text-lg font-medium leading-relaxed border-l-4 border-primary pl-4 py-2 bg-primary/5 rounded-r-md">
+                  <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-3 border-b border-border pb-2">The Verdict</h3>
+                  <p style={{
+                    fontStyle: "italic",
+                    fontSize: "1.375rem",
+                    fontWeight: 600,
+                    borderLeft: "3px solid #10b981",
+                    paddingLeft: "16px",
+                    paddingTop: "4px",
+                    paddingBottom: "4px",
+                    color: "#f8fafc",
+                    fontFamily: "'Newsreader', 'Georgia', serif",
+                    lineHeight: 1.4,
+                  }}>
                     "{analysisResult.verdict}"
                   </p>
                 </div>
